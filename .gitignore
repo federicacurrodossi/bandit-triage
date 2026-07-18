@@ -5,3 +5,6 @@ model.json
 target_flask/
 real_findings.json
 findings_*.txt
+target_bandit/
+bandit_examples.json
+*.bak
