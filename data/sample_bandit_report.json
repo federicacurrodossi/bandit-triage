@@ -1,0 +1,97 @@
+{
+  "results": [
+    {
+      "filename": "app/payments/stripe_client.py",
+      "code": "18    STRIPE_SECRET = \"rk_live_51H8x9zK2eL4mN6pQ\"\n19    stripe.api_key = STRIPE_SECRET\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'rk_live_51H8x9zK2eL4mN6pQ'",
+      "line_number": 18,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string"
+    },
+    {
+      "filename": "tests/test_payments.py",
+      "code": "12    def test_stripe_rejects_invalid_key():\n13        FAKE_KEY = \"sk_test_fake_00000000\"\n14        assert charge(FAKE_KEY) is None\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'sk_test_fake_00000000'",
+      "line_number": 13,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string"
+    },
+    {
+      "filename": "app/reports/pdf_export.py",
+      "code": "40    outfile = request.args.get(\"name\")\n41    subprocess.call(\"wkhtmltopdf out.html \" + outfile, shell=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "subprocess call with shell=True identified, security issue.",
+      "line_number": 41,
+      "test_id": "B602",
+      "test_name": "subprocess_popen_with_shell_equals_true"
+    },
+    {
+      "filename": "scripts/nightly_backup.py",
+      "code": "9     subprocess.call(\"tar -czf backup.tar.gz /data\", shell=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "subprocess call with shell=True identified, security issue.",
+      "line_number": 9,
+      "test_id": "B602",
+      "test_name": "subprocess_popen_with_shell_equals_true"
+    },
+    {
+      "filename": "app/api/session.py",
+      "code": "70    token_data = pickle.loads(request.cookies.get(\"session\"))\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle library appears to be in use, possible security issue.",
+      "line_number": 70,
+      "test_id": "B301",
+      "test_name": "pickle"
+    },
+    {
+      "filename": "app/utils/math_helpers.py",
+      "code": "22    def safe_divide(a, b):\n23        assert b != 0, \"cannot divide by zero\"\n24        return a / b\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 23,
+      "test_id": "B101",
+      "test_name": "assert_used"
+    },
+    {
+      "filename": "app/search/query_builder.py",
+      "code": "55    term = request.args.get(\"q\")\n56    query = \"SELECT * FROM products WHERE name LIKE '%\" + term + \"%'\"\n57    cursor.execute(query)\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 56,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "issue_cwe": {"id": 89, "link": "https://cwe.mitre.org/data/definitions/89.html"}
+    },
+    {
+      "filename": "app/ml/upload_endpoint.py",
+      "code": "18    user_upload = request.files[\"weights\"]\n19    model = torch.load(user_upload)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Use of unsafe torch.load() -- can execute arbitrary code via pickle deserialization.",
+      "line_number": 19,
+      "test_id": "B614",
+      "test_name": "pytorch_load",
+      "issue_cwe": {"id": 502, "link": "https://cwe.mitre.org/data/definitions/502.html"}
+    },
+    {
+      "filename": "app/ml/startup.py",
+      "code": "5     MODEL_REPO = \"internal-org/vetted-classifier\"\n6     PINNED_REVISION = \"f9c001e\"\n7     model = AutoModel.from_pretrained(MODEL_REPO, revision=PINNED_REVISION)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "Insecure download of Hugging Face model -- unpinned revision and trust_remote_code enabled.",
+      "line_number": 7,
+      "test_id": "B615",
+      "test_name": "huggingface_unsafe_download",
+      "issue_cwe": {"id": 494, "link": "https://cwe.mitre.org/data/definitions/494.html"}
+    }
+  ]
+}

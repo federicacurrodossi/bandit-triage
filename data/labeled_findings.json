@@ -1,0 +1,233 @@
+{
+  "_note": "Each entry matches Bandit's real JSON finding schema (filename, code, issue_confidence, issue_severity, issue_text, line_number, test_id, test_name). The 'label' field is NOT something Bandit produces -- it's a ground-truth annotation added by hand for training this triage classifier: true_positive means a real, exploitable issue; false_positive means Bandit correctly matched the pattern but the finding isn't actually a security risk in context.",
+
+  "findings": [
+    {
+      "filename": "app/auth/login.py",
+      "code": "12    DB_PASSWORD = \"pr0d-p@ssw0rd-2024\"\n13    conn = connect(host=DB_HOST, password=DB_PASSWORD)\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'pr0d-p@ssw0rd-2024'",
+      "line_number": 12,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "true_positive"
+    },
+    {
+      "filename": "tests/test_auth.py",
+      "code": "8    def test_login_rejects_wrong_password():\n9        DUMMY_PASSWORD = \"testpass123\"\n10       assert login(user, DUMMY_PASSWORD) is False\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'testpass123'",
+      "line_number": 9,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "scripts/setup_demo_db.py",
+      "code": "20    DEMO_PASSWORD = \"changeme\"\n21    create_demo_user(password=DEMO_PASSWORD)\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'changeme'",
+      "line_number": 20,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "app/integrations/legacy_api.py",
+      "code": "44    API_SECRET = \"sk_live_9f2a7c1b8e3d4f5061a2\"\n45    headers = {\"Authorization\": f\"Bearer {API_SECRET}\"}\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'sk_live_9f2a7c1b8e3d4f5061a2'",
+      "line_number": 44,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "true_positive"
+    },
+    {
+      "filename": "app/utils/validators.py",
+      "code": "15    def check_positive(n):\n16        assert n > 0, \"value must be positive\"\n17        return n\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 16,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
+    },
+    {
+      "filename": "tests/test_validators.py",
+      "code": "5     def test_check_positive():\n6         assert check_positive(3) == 3\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 6,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "false_positive"
+    },
+    {
+      "filename": "tests/test_permissions.py",
+      "code": "22    def test_admin_only_route_blocks_regular_user():\n23        assert response.status_code == 403\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 23,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "false_positive"
+    },
+    {
+      "filename": "app/reports/export.py",
+      "code": "30    filename = request.form[\"filename\"]\n31    subprocess.call(f\"convert {filename} report.pdf\", shell=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "subprocess call with shell=True identified, security issue.",
+      "line_number": 31,
+      "test_id": "B602",
+      "test_name": "subprocess_popen_with_shell_equals_true",
+      "label": "true_positive"
+    },
+    {
+      "filename": "scripts/build.py",
+      "code": "10    subprocess.call(\"npm run build && npm run minify\", shell=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "subprocess call with shell=True identified, security issue.",
+      "line_number": 10,
+      "test_id": "B602",
+      "test_name": "subprocess_popen_with_shell_equals_true",
+      "label": "false_positive"
+    },
+    {
+      "filename": "scripts/deploy.py",
+      "code": "18    subprocess.call(\"docker-compose up -d --build\", shell=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "subprocess call with shell=True identified, security issue.",
+      "line_number": 18,
+      "test_id": "B602",
+      "test_name": "subprocess_popen_with_shell_equals_true",
+      "label": "false_positive"
+    },
+    {
+      "filename": "app/admin/user_tools.py",
+      "code": "50    username = request.args.get(\"user\")\n51    subprocess.call(\"userdel \" + username, shell=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "subprocess call with shell=True identified, security issue.",
+      "line_number": 51,
+      "test_id": "B602",
+      "test_name": "subprocess_popen_with_shell_equals_true",
+      "label": "true_positive"
+    },
+    {
+      "filename": "app/models/cache.py",
+      "code": "60    data = pickle.loads(request.data)\n61    cache.set(key, data)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle library appears to be in use, possible security issue.",
+      "line_number": 60,
+      "test_id": "B301",
+      "test_name": "pickle",
+      "label": "true_positive"
+    },
+    {
+      "filename": "scripts/local_cache_tool.py",
+      "code": "8     with open(\"local_cache.pkl\", \"rb\") as f:\n9         data = pickle.load(f)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle library appears to be in use, possible security issue.",
+      "line_number": 9,
+      "test_id": "B301",
+      "test_name": "pickle",
+      "label": "false_positive"
+    },
+    {
+      "filename": "app/db/queries.py",
+      "code": "70    query = \"SELECT * FROM users WHERE id = \" + user_id\n71    cursor.execute(query)\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 70,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "issue_cwe": {"id": 89, "link": "https://cwe.mitre.org/data/definitions/89.html"},
+      "label": "true_positive"
+    },
+    {
+      "filename": "app/db/queries.py",
+      "code": "80    query = \"SELECT COUNT(*) FROM users\"\n81    cursor.execute(query)\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 80,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "issue_cwe": {"id": 89, "link": "https://cwe.mitre.org/data/definitions/89.html"},
+      "label": "false_positive"
+    },
+    {
+      "filename": "tests/fixtures/db_fixtures.py",
+      "code": "5     query = \"SELECT * FROM users WHERE id = \" + str(TEST_USER_ID)\n6     cursor.execute(query)\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 5,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "issue_cwe": {"id": 89, "link": "https://cwe.mitre.org/data/definitions/89.html"},
+      "label": "false_positive"
+    },
+    {
+      "filename": "app/ml/inference.py",
+      "code": "14    uploaded_file = request.files[\"model\"]\n15    model = torch.load(uploaded_file, weights_only=False)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Use of unsafe torch.load() -- can execute arbitrary code via pickle deserialization.",
+      "line_number": 15,
+      "test_id": "B614",
+      "test_name": "pytorch_load",
+      "issue_cwe": {"id": 502, "link": "https://cwe.mitre.org/data/definitions/502.html"},
+      "label": "true_positive"
+    },
+    {
+      "filename": "app/ml/inference.py",
+      "code": "22    CHECKPOINT_PATH = \"weights/resnet50_v3_pinned.pt\"\n23    model = torch.load(CHECKPOINT_PATH, weights_only=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Use of unsafe torch.load() -- can execute arbitrary code via pickle deserialization.",
+      "line_number": 23,
+      "test_id": "B614",
+      "test_name": "pytorch_load",
+      "issue_cwe": {"id": 502, "link": "https://cwe.mitre.org/data/definitions/502.html"},
+      "label": "false_positive"
+    },
+    {
+      "filename": "app/ml/model_loader.py",
+      "code": "30    repo_id = request.args.get(\"model_repo\")\n31    model = AutoModel.from_pretrained(repo_id, trust_remote_code=True)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "Insecure download of Hugging Face model -- unpinned revision and trust_remote_code enabled.",
+      "line_number": 31,
+      "test_id": "B615",
+      "test_name": "huggingface_unsafe_download",
+      "issue_cwe": {"id": 494, "link": "https://cwe.mitre.org/data/definitions/494.html"},
+      "label": "true_positive"
+    },
+    {
+      "filename": "app/ml/model_loader.py",
+      "code": "40    MODEL_REPO = \"org/approved-model\"\n41    PINNED_REVISION = \"a1b2c3d\"\n42    model = AutoModel.from_pretrained(MODEL_REPO, revision=PINNED_REVISION)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "HIGH",
+      "issue_text": "Insecure download of Hugging Face model -- unpinned revision and trust_remote_code enabled.",
+      "line_number": 42,
+      "test_id": "B615",
+      "test_name": "huggingface_unsafe_download",
+      "issue_cwe": {"id": 494, "link": "https://cwe.mitre.org/data/definitions/494.html"},
+      "label": "false_positive"
+    }
+  ]
+}
