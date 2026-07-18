@@ -15,4 +15,5 @@ target_insecure_app/
 insecure_app_findings.json
 constructed_examples/
 constructed_findings.json
-misclassified.md
+misclassified.mdtarget_werkzeug/
+werkzeug_findings.json

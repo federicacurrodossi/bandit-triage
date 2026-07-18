@@ -49,13 +49,25 @@ needs both:
   a joke placeholder value — one in config, one in a test file). A good
   illustration that the variable name alone ("SECRET") doesn't decide the
   label; the value and context do.
+- **Werkzeug** (`github.com/pallets/werkzeug`) — the mature WSGI library that
+  Flask is built on. Used as a source of **B101 true positives**: its source
+  code (`src/werkzeug/`) uses `assert` for internal invariants — type checks
+  (`assert isinstance(env, dict)`), preconditions (`assert self.map is not
+  None, "rule not bound"`), and call-order guards (`assert status_set is not
+  None, "write() before start_response"`). These are real asserts in
+  production code that would vanish under `python -O`, which is exactly what
+  B101 warns about. Big, mature frameworks are the natural home for B101 true
+  positives, because small demo repos rarely use assert in non-test code.
 
 Sources that were tried but did not contribute: **flask_config_example**
 (`github.com/MirelaI/flask_config_example`) was scanned but produced no B105
 findings, because it keeps its secrets in a `config.json` file rather than in
-Python code, and Bandit only analyzes `.py` files. It's recorded here for
-transparency — not every source yields usable findings, and knowing why is
-part of the process.
+Python code, and Bandit only analyzes `.py` files. Also, **Bandit's own
+`examples/assert.py`** was checked for B101 true positives but only contained
+`assert True` — a technically-flagged but uninstructive case (it protects
+nothing), so it was skipped in favor of the real Werkzeug source asserts.
+Both are recorded here for transparency — not every source yields usable
+findings, and knowing why is part of the process.
 
 This split matters: training only on Flask would teach the model only what
 noise looks like. Pairing it with Bandit's intentional examples and

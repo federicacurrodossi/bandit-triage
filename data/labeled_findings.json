@@ -611,6 +611,83 @@
       "test_id": "B101",
       "test_name": "assert_used",
       "label": "false_positive"
+    },
+    {
+      "filename": "target_werkzeug/src/werkzeug/_internal.py",
+      "code": "38     def __init__(self, environ, populate_request=True, shallow=False):\n39         assert isinstance(env, dict), (\n40             \"environ is not a dict\"\n41         )\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 39,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_werkzeug/src/werkzeug/datastructures/range.py",
+      "code": "270         length = self.length\n271         assert is_byte_range_valid(start, stop, length), \"Bad range provided\"\n272         return (start, stop)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 271,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_werkzeug/src/werkzeug/routing/map.py",
+      "code": "769     def redirect(self):\n770         assert self.map.redirect_defaults\n771         return self.map\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 770,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_werkzeug/src/werkzeug/routing/map.py",
+      "code": "824         url = self.build(...)\n825         assert url != path, \"detected invalid alias setting. No canonical URL found\"\n826         return url\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 825,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_werkzeug/src/werkzeug/routing/rules.py",
+      "code": "699     def build_compare_key(self):\n700         assert self.map is not None, \"rule not bound\"\n701         return self.map\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 700,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_werkzeug/src/werkzeug/serving.py",
+      "code": "259         def write(data):\n260             assert status_set is not None, \"write() before start_response\"\n261             assert headers_set is not None, \"write() before start_response\"\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 260,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_werkzeug/src/werkzeug/serving.py",
+      "code": "300         def write(data):\n301             assert isinstance(data, bytes), \"applications must write bytes\"\n302             ...\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 301,
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "label": "true_positive"
     }
   ]
 }
