@@ -14,6 +14,8 @@ Bandit's own severity level alone.
   step-by-step process for growing the training dataset from real Bandit
   findings on real open-source projects, including the labeling policy used.
 
+Reference for dataset construction: https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing
+
 ## The problem
 
 Static analysis tools are well documented to have high false-positive

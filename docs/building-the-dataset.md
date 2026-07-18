@@ -260,3 +260,44 @@ This is disclosed openly: these are constructed examples with realistic
 shape, clearly marked as such — not scraped real-world leaks. Using public
 example values (like AWS's `...EXAMPLEKEY` and Stripe's documentation test
 key) is a deliberate choice so the dataset contains no genuine live secret.
+
+## Per-rule reasoning: B101 (assert_used)
+
+B101 flags every use of the `assert` keyword. The reason it matters: asserts
+are **stripped out** when Python is compiled to optimized bytecode
+(`python -O`), so any check written as an `assert` silently disappears in that
+mode. If an assert was enforcing something important, that protection is gone.
+Bandit's own advice is to raise a real error (`AssertionError` or a meaningful
+exception) instead. B101 is always severity LOW, confidence HIGH — Bandit is
+sure it's an assert; it just can't know whether it matters in context.
+
+The key labeling signal for B101 is almost the mirror image of B105's, and it
+turns on **where the assert is**:
+
+- **assert in a test file** → `false_positive`. Using `assert` in unit tests
+  is the normal, expected way to check results (`assert result == expected`).
+  Bandit itself documents skipping this rule in tests (its `assert_used`
+  config suggests skipping `*_test.py` / `*test_*.py`). The `is_test_file`
+  feature captures this directly, so the model handles it well.
+- **assert in production / application code** → `true_positive`. Here the
+  assert could vanish under `python -O`, so per the rule it should be replaced
+  with a real error. We label these true positive consistently, on principle.
+
+A worked illustration from Flask: scanning the whole project produced **1053**
+B101 findings, but **1049** of them were in test files (legitimate test
+asserts → false positive) and only **4** were in the actual source under
+`src/flask/` (e.g. `assert view_func is not None` in `scaffold.py`,
+`assert meth is not None` in `views.py`). Those 4 are the interesting
+true-positive candidates. This lopsided split (1049 vs 4) is itself the
+lesson: for B101, real issues are rare and the "where" question does almost
+all the work.
+
+An honest note on the borderline: the 4 source asserts in Flask are true
+positives *by the rule* (asserts in production code, removable under `-O`),
+but in practice they guard developer-side invariants (type checks, internal
+preconditions) rather than security-critical protections. A strict reviewer
+labels them true positive on principle; a pragmatic one might see them as
+low-risk defensive checks. We label them `true_positive` for a consistent,
+defensible policy — but the ambiguity is deliberately kept, because these grey
+cases are exactly what makes triage a non-trivial judgment rather than a
+lookup.

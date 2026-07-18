@@ -1,20 +1,21 @@
 """
 Prints and saves a breakdown of the labeled dataset: for each Bandit rule,
-how many true_positive vs false_positive examples it has, a simple balance
-flag, and the training-set accuracy (how many the model gets right on the
-data it learned from), plus overall totals.
+how many true_positive vs false_positive examples it has, a balance flag, and
+the training-set accuracy. It ALSO writes a second file listing every finding
+the model misclassifies (where its prediction disagrees with your hand label),
+grouped by rule -- so you can inspect the hard cases after every training run
+without running a separate script.
 
 IMPORTANT: training-set accuracy is a DIAGNOSTIC, not a real evaluation. It
-measures the model on the same data it was trained on, so it looks
-optimistic. A real evaluation needs a separate held-out test set. Use it to
-see which rules the model struggles with, not to claim real-world accuracy.
+measures the model on the same data it was trained on, so it looks optimistic.
+A real evaluation needs a separate held-out test set.
 
-Run it whenever you want to check the state of the dataset:
+Run whenever you want to check the dataset:
     python3 dataset_stats.py
 
-It trains the model on the current dataset, prints the table to the screen,
-and also writes it to:
-    dataset_stats.txt
+Writes:
+    dataset_stats.md     -- the per-rule distribution + accuracy table
+    misclassified.md     -- every finding the model got wrong, grouped by rule
 """
 import json
 from collections import defaultdict
@@ -22,69 +23,60 @@ from collections import defaultdict
 import numpy as np
 
 from bandit_triage.classifier import TriageClassifier
-from bandit_triage.features import extract_features
+from bandit_triage.features import extract_features, secret_score, extract_flagged_value
 from bandit_triage.loader import load_labeled_data
 
 DATASET_PATH = "data/labeled_findings.json"
-OUTPUT_PATH = "dataset_stats.txt"
+OUTPUT_PATH = "dataset_stats.md"
+MISCLASSIFIED_PATH = "misclassified.md"
 
-# target per rule, used only to show a simple hint (not enforced)
 TARGET_PER_RULE = 20
-MIN_MINORITY = 6  # aim for at least this many of the smaller class
+MIN_MINORITY = 6
 
 
 def main():
-    # load findings (both as raw dicts for counting and as Finding objects
-    # for feature extraction / accuracy)
-    with open(DATASET_PATH) as f:
-        data = json.load(f)
-
     findings = load_labeled_data(DATASET_PATH)
     X = np.array([extract_features(f) for f in findings])
     y = np.array([1 if f.label == "true_positive" else 0 for f in findings])
 
-    # train the model on the full dataset so we can report accuracy
+    # train on the full dataset
     model = TriageClassifier.train(X, y)
     model.save("model.json")
 
-    # count per rule and label, and track correct predictions per rule
-    counts = defaultdict(lambda: {"true_positive": 0, "false_positive": 0,
-                                  "correct": 0, "total": 0})
-    for finding, x, label in zip(findings, X, y):
-        rule = finding.test_id or "UNKNOWN"
+    # per-rule counts + accuracy, and collect misclassified findings
+    counts = defaultdict(lambda: {"tp": 0, "fp": 0, "correct": 0, "total": 0})
+    misclassified = defaultdict(list)  # rule -> list of (finding, pred)
+
+    for f, x, label in zip(findings, X, y):
+        rule = f.test_id or "UNKNOWN"
         if label == 1:
-            counts[rule]["true_positive"] += 1
+            counts[rule]["tp"] += 1
         else:
-            counts[rule]["false_positive"] += 1
+            counts[rule]["fp"] += 1
 
         pred = model.predict(x)
         predicted = 1 if pred.label == "likely_true_positive" else 0
         counts[rule]["correct"] += int(predicted == label)
         counts[rule]["total"] += 1
 
-    lines = []
-    lines.append("Dataset balance and training-set accuracy by rule")
-    lines.append("=" * 72)
-    lines.append("NOTE: accuracy is a diagnostic (measured on the training data itself),")
-    lines.append("not a real evaluation. A real evaluation needs a held-out test set.")
-    lines.append("")
-    lines.append(f"{'rule':8} {'true':>5} {'false':>6} {'total':>6} {'accuracy':>11}   balance")
-    lines.append("-" * 72)
+        if predicted != label:
+            misclassified[rule].append((f, pred))
 
+    # ---- gather per-rule rows ----
+    rows = []
     total_tp = total_fp = total_correct = 0
     for rule in sorted(counts.keys()):
-        tp = counts[rule]["true_positive"]
-        fp = counts[rule]["false_positive"]
+        d = counts[rule]
+        tp, fp = d["tp"], d["fp"]
         total = tp + fp
-        correct = counts[rule]["correct"]
+        correct = d["correct"]
         total_tp += tp
         total_fp += fp
         total_correct += correct
 
         acc = correct / total if total else 0.0
-        acc_str = f"{correct}/{total} ({acc:>4.0%})"
+        acc_str = f"{correct}/{total} ({acc:.0%})"
 
-        # simple balance hint
         minority = min(tp, fp)
         if total < TARGET_PER_RULE:
             hint = f"need ~{TARGET_PER_RULE - total} more to reach {TARGET_PER_RULE}"
@@ -94,23 +86,98 @@ def main():
         else:
             hint = "ok"
 
-        lines.append(f"{rule:8} {tp:>5} {fp:>6} {total:>6} {acc_str:>11}   {hint}")
+        rows.append((rule, tp, fp, total, acc_str, hint))
 
     grand_total = total_tp + total_fp
     overall_acc = total_correct / grand_total if grand_total else 0.0
-    lines.append("-" * 72)
-    lines.append(f"{'TOTAL':8} {total_tp:>5} {total_fp:>6} {grand_total:>6} "
-                 f"{f'{total_correct}/{grand_total} ({overall_acc:.0%})':>11}")
+    total_wrong = sum(len(v) for v in misclassified.values())
+
+    # ---- console output (aligned plain text) ----
+    console = []
+    console.append("Dataset balance and training-set accuracy by rule")
+    console.append("=" * 72)
+    console.append(f"{'rule':8} {'true':>5} {'false':>6} {'total':>6} {'accuracy':>12}   balance")
+    console.append("-" * 72)
+    for rule, tp, fp, total, acc_str, hint in rows:
+        console.append(f"{rule:8} {tp:>5} {fp:>6} {total:>6} {acc_str:>12}   {hint}")
+    console.append("-" * 72)
+    console.append(f"{'TOTAL':8} {total_tp:>5} {total_fp:>6} {grand_total:>6} "
+                   f"{f'{total_correct}/{grand_total} ({overall_acc:.0%})':>12}")
+    console.append(f"\nRules covered: {len(counts)} | "
+                   f"{total_tp} true, {total_fp} false | "
+                   f"misclassified: {total_wrong}")
+    print("\n".join(console))
+
+    # ---- Markdown output for the file ----
+    lines = []
+    lines.append("# Dataset balance and training-set accuracy")
     lines.append("")
-    lines.append(f"Rules covered: {len(counts)}")
-    lines.append(f"Overall: {total_tp} true_positive, {total_fp} false_positive")
+    lines.append("> **Note:** accuracy here is *training-set* accuracy — a diagnostic "
+                 "measured on the same data the model learned from, so it looks "
+                 "optimistic. A real evaluation needs a separate held-out test set. "
+                 "Use it to spot unbalanced rules or ones the model struggles with, "
+                 "not to claim real-world accuracy.")
+    lines.append("")
+    lines.append("| Rule | True | False | Total | Accuracy | Balance |")
+    lines.append("|------|-----:|------:|------:|:--------:|---------|")
+    for rule, tp, fp, total, acc_str, hint in rows:
+        lines.append(f"| {rule} | {tp} | {fp} | {total} | {acc_str} | {hint} |")
+    lines.append(f"| **TOTAL** | **{total_tp}** | **{total_fp}** | **{grand_total}** | "
+                 f"**{total_correct}/{grand_total} ({overall_acc:.0%})** | |")
+    lines.append("")
+    lines.append(f"- **Rules covered:** {len(counts)}")
+    lines.append(f"- **Overall:** {total_tp} true_positive, {total_fp} false_positive")
+    lines.append(f"- **Misclassified:** {total_wrong} (see `{MISCLASSIFIED_PATH}`)")
 
-    text = "\n".join(lines)
-    print(text)
+    table_text = "\n".join(lines)
+    with open(OUTPUT_PATH, "w") as fh:
+        fh.write(table_text + "\n")
 
-    with open(OUTPUT_PATH, "w") as f:
-        f.write(text + "\n")
-    print(f"\n[Saved to {OUTPUT_PATH}]")
+    # ---- build the misclassified report as Markdown, grouped by rule ----
+    mlines = []
+    mlines.append("# Misclassified findings")
+    mlines.append("")
+    mlines.append("_Cases where the model's prediction disagrees with your hand label._")
+    mlines.append("")
+    mlines.append("> A disagreement is often a genuinely **ambiguous** finding "
+                  "(fine to miss), not necessarily a labeling error. Use this to "
+                  "decide, per case, whether it's healthy ambiguity (leave it) or "
+                  "a label worth revising.")
+    mlines.append("")
+
+    total_wrong = sum(len(v) for v in misclassified.values())
+    if total_wrong == 0:
+        mlines.append("**None** — the model agrees with every label. ✅")
+    else:
+        mlines.append(f"**Total misclassified: {total_wrong}**")
+        mlines.append("")
+        for rule in sorted(misclassified.keys()):
+            mlines.append(f"## {rule} — {len(misclassified[rule])} misclassified")
+            mlines.append("")
+            for f, pred in misclassified[rule]:
+                value = extract_flagged_value(f)
+                mlines.append(f"### `{f.filename}:{f.line_number}`")
+                mlines.append("")
+                mlines.append(f"- **Your label:** {f.label}")
+                mlines.append(f"- **Model says:** {pred.label} "
+                              f"(p={pred.true_positive_probability:.2f})")
+                if value:
+                    mlines.append(f"- **Flagged value:** `{value}` "
+                                  f"(secret_score = {secret_score(value):.2f})")
+                top = pred.contributions[0]
+                mlines.append(f"- **Top signal:** {top['feature']} "
+                              f"(contribution = {top['contribution']:+.2f})")
+                mlines.append("")
+                mlines.append("```python")
+                mlines.append(f.code.strip())
+                mlines.append("```")
+                mlines.append("")
+
+    mtext = "\n".join(mlines)
+    with open(MISCLASSIFIED_PATH, "w") as fh:
+        fh.write(mtext + "\n")
+
+    print(f"\n[Saved table to {OUTPUT_PATH} and misclassified report to {MISCLASSIFIED_PATH}]")
 
 
 if __name__ == "__main__":
