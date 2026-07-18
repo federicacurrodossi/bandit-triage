@@ -42,6 +42,13 @@ needs both:
   disclosed here as an intentionally vulnerable source; the finding was still
   labeled by hand using the policy below, not assumed true just because the
   repo is labeled "vulnerable".
+- **python-insecure-app** (`github.com/trottomv/python-insecure-app`) — a
+  deliberately vulnerable FastAPI app. It contributed a clear B105 true
+  positive (`SUPER_SECRET_TOKEN = "5u93R53Cr3tT0k3n"`, a realistic token in a
+  config file) plus two false positives (`SUPER_SECRET_NAME = "John Ripper"`,
+  a joke placeholder value — one in config, one in a test file). A good
+  illustration that the variable name alone ("SECRET") doesn't decide the
+  label; the value and context do.
 
 Sources that were tried but did not contribute: **flask_config_example**
 (`github.com/MirelaI/flask_config_example`) was scanned but produced no B105
@@ -51,8 +58,8 @@ transparency — not every source yields usable findings, and knowing why is
 part of the process.
 
 This split matters: training only on Flask would teach the model only what
-noise looks like. Pairing it with Bandit's intentional examples and a
-vulnerable teaching repo gives the model both sides — real issues and false
+noise looks like. Pairing it with Bandit's intentional examples and
+vulnerable teaching repos gives the model both sides — real issues and false
 alarms — which is what it needs to tell them apart.
 
 Note on true positives: examples from intentionally-vulnerable or
@@ -197,10 +204,59 @@ redirect (question 3 → harmless). All three point the same way.
 
 **Label: `false_positive`.**
 
-## Honest note for the README
+## Constructed true-positive examples for B105
 
-Documenting this process is itself a strength of the project: it shows the
-dataset was built by applying a consistent, explainable labeling policy to
-real findings from real projects — not by inventing convenient examples.
-When the dataset grows this way, the model's evaluation becomes far more
-credible.
+Real hardcoded secrets are rare in clean open-source projects, so the B105
+true-positive class was hard to fill from real repos alone (Flask had none,
+and the intentionally-vulnerable repos gave only a handful). To balance the
+class, a few true-positive examples were deliberately constructed — using
+**real, publicly documented secret formats**, not values invented at random,
+and not anyone's actual leaked secret. They live in
+`constructed_secrets_example.py`.
+
+Where the patterns come from (documented sources):
+
+- **AWS secret access key** — the 40-character `[A-Za-z0-9/+=]{40}` format,
+  using AWS's own public example value `wJalrXUtnFEMI/...EXAMPLEKEY` (note the
+  literal word "EXAMPLE" in it). Sources: AWS Secrets Manager / CloudFormation
+  documentation, and the Cencori "Secrets Detection Patterns" list.
+- **JWT signing secret** — the `eyJhbGci...` base64 header shape that every
+  HS256 JWT starts with. Sources: Cencori pattern list; AWS Kendra "JWT with
+  a shared secret" documentation.
+- **MongoDB connection string** — `mongodb+srv://user:pass@cluster...` with an
+  embedded password. Source: Cencori pattern list
+  (`mongodb(\+srv)?://[^@\s]+@...`).
+- **Stripe API key** — the `sk_test_[0-9a-zA-Z]{24,}` format, using Stripe's
+  public documentation test key. Sources: Cencori pattern list; Stripe docs.
+- **SMTP password** — a generic high-complexity password (mixed case, digits,
+  symbols), matching the generic `(password|passwd|pwd)` pattern.
+
+Why they're built this way (design rationale):
+
+- **Different *shapes* of secret** — a cloud key, a token, a connection
+  string, an API key, and a password. This teaches the model that a B105 true
+  positive comes in many forms, not just one, so it generalizes better than
+  it would from five near-identical passwords.
+- **All in production (non-test) files**, and all actually *used* — each
+  secret is passed to a function that consumes it (`boto3.Session`,
+  `jwt.encode`, `MongoClient`, `stripe.api_key`, `smtp.login`). So the
+  context clearly indicates a real, active credential, not a dead placeholder.
+- **Values use documented public example formats**, so they have the right
+  length and character variety of real secrets (and therefore score high on
+  the `secret_score` feature) without being anyone's actual leaked secret.
+
+A note on Bandit coverage: Bandit's B105 only fires when the flagged string is
+tied to a **name** containing `password`, `pass`, `passwd`, `pwd`, `secret`,
+`token`, or `secrete`. So of the five, Bandit flags `AWS_SECRET_ACCESS_KEY`,
+`JWT_SECRET`, and `SMTP_PASSWORD`, but **not** `STRIPE_API_KEY` or
+`DATABASE_URL` — even though those are just as real. That gap is intentional
+and useful: the two Bandit misses were added to the dataset by hand, so the
+triage model learns to recognize them by value and context. If Bandit's rule
+ever widens to catch them, the model is already prepared. This is a small
+demonstration that the triage layer can reason about secrets beyond Bandit's
+current pattern matching.
+
+This is disclosed openly: these are constructed examples with realistic
+shape, clearly marked as such — not scraped real-world leaks. Using public
+example values (like AWS's `...EXAMPLEKEY` and Stripe's documentation test
+key) is a deliberate choice so the dataset contains no genuine live secret.

@@ -13,3 +13,5 @@ target_vuln/
 vuln_findings.json
 target_insecure_app/
 insecure_app_findings.json
+constructed_examples/
+constructed_findings.json
