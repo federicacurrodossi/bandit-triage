@@ -67,6 +67,9 @@ Example output:
 - **`cli.py`** — runs the model against a real Bandit report and prints a
   re-prioritized, explained list.
 
+For a visual explanation of the structure, see [docs/architecture.md](docs/architecture.md).
+
+
 ## The dataset
 
 `data/labeled_findings.json` contains 20 hand-labeled example findings
