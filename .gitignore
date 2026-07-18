@@ -7,4 +7,7 @@ real_findings.json
 findings_*.txt
 target_bandit/
 bandit_examples.json
-*.bak
+*.baktarget_flask_config/
+flask_config_findings.json
+target_vuln/
+vuln_findings.json

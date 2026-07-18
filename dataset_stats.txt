@@ -1,16 +1,19 @@
-Dataset balance by rule
-============================================================
-rule      true  false  total   balance
-------------------------------------------------------------
-B101         1      2      3   need ~17 more to reach 20
-B105         5     11     16   need ~4 more to reach 20
-B301         1      1      2   need ~18 more to reach 20
-B602         2      2      4   need ~16 more to reach 20
-B608         1      2      3   need ~17 more to reach 20
-B614         1      1      2   need ~18 more to reach 20
-B615         1      1      2   need ~18 more to reach 20
-------------------------------------------------------------
-TOTAL       12     20     32
+Dataset balance and training-set accuracy by rule
+========================================================================
+NOTE: accuracy is a diagnostic (measured on the training data itself),
+not a real evaluation. A real evaluation needs a held-out test set.
+
+rule      true  false  total    accuracy   balance
+------------------------------------------------------------------------
+B101         1      2      3  3/3 (100%)   need ~17 more to reach 20
+B105         6     11     17 14/17 ( 82%)   need ~3 more to reach 20
+B301         1      1      2  2/2 (100%)   need ~18 more to reach 20
+B602         2      2      4  4/4 (100%)   need ~16 more to reach 20
+B608         1      2      3  3/3 (100%)   need ~17 more to reach 20
+B614         1      1      2  2/2 (100%)   need ~18 more to reach 20
+B615         1      1      2  2/2 (100%)   need ~18 more to reach 20
+------------------------------------------------------------------------
+TOTAL       13     20     33 30/33 (91%)
 
 Rules covered: 7
-Overall: 12 true_positive, 20 false_positive
+Overall: 13 true_positive, 20 false_positive
