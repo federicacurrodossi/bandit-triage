@@ -70,8 +70,10 @@ Example output:
   word, whether tainted external input (`request.`, `sys.argv`,
   user-uploaded files, unpinned model repo IDs, etc.) appears nearby,
   whether the code builds a string dynamically vs. using a static literal,
-  and which specific Bandit rule fired. Every feature is something a human
-  reviewer would actually look for by hand.
+  a `secret_score` measuring how much a flagged value looks like a real
+  secret rather than a placeholder, and which specific Bandit rule fired.
+  Every feature is something a human reviewer would actually look for by
+  hand.
 - **`classifier.py`** — logistic regression trained on top of those
   features, saved as plain JSON (not pickle), with per-feature contribution
   explanations for every prediction.
@@ -80,16 +82,18 @@ Example output:
 
 ## The dataset
 
-`data/labeled_findings.json` contains 20 hand-labeled example findings
-across 7 Bandit rule types (hardcoded passwords, `assert` usage,
-`subprocess` with `shell=True`, `pickle` usage, string-built SQL queries,
-and Bandit's two AI/ML supply-chain checks — unsafe `torch.load()` and
-insecure Hugging Face model downloads, both of which map to CWE-502
-insecure deserialization, the same vulnerability class as the pickle
-research earlier in this project's development). Each example was written
-to represent a realistic true-positive or false-positive case. This is a
-small, illustrative training set built to demonstrate the approach — see
-Limitations below.
+`data/labeled_findings.json` contains hand-labeled example findings across
+7 Bandit rule types (hardcoded passwords, `assert` usage, `subprocess` with
+`shell=True`, `pickle` usage, string-built SQL queries, and Bandit's two
+AI/ML supply-chain checks — unsafe `torch.load()` and insecure Hugging Face
+model downloads, both of which map to CWE-502 insecure deserialization, the
+same vulnerability class as the pickle research earlier in this project's
+development). The dataset is grown by running Bandit on real open-source
+projects and labeling the findings by hand; the two most developed rules so
+far (B105 hardcoded passwords and B101 assert usage) are balanced with
+around 20 examples each, while the others are still being filled in. See
+[`docs/building-the-dataset.md`](docs/building-the-dataset.md) for the full
+process and labeling policy, and Limitations below.
 
 `data/sample_bandit_report.json` is a separate, held-out set of findings
 (not used in training) used to sanity-check the classifier generalizes
@@ -99,17 +103,25 @@ past its exact training examples.
 
 ```bash
 pip install -r requirements.txt
-python3 train_classifier.py
+python3 dataset_stats.py    # trains the model, saves model.json, and reports per-rule stats
 python3 -m bandit_triage.cli triage data/sample_bandit_report.json --model model.json
 ```
 
+`dataset_stats.py` is the main workhorse: it retrains the model on the
+current dataset and writes two Markdown reports — `dataset_stats.md`
+(per-rule true/false counts, training-set accuracy, and a balance hint) and
+`misclassified.md` (the findings where the model disagrees with the hand
+label, i.e. the hard cases). Note that the accuracy it reports is
+*training-set* accuracy — a diagnostic, not a real held-out evaluation.
+
 ## Web UI (optional)
 
-For a clearer view than terminal output, there's a minimal local web UI:
+For a clearer view than terminal output, there's a minimal local web UI
+(a Flask app with a dark "security tool" theme):
 
 ```bash
 python3 web_ui.py
-# then open http://127.0.0.1:5000
+# then open http://127.0.0.1:5001
 ```
 
 Paste a Bandit JSON report into the box (or click "Load example report"),
@@ -117,7 +129,8 @@ and it renders each finding as a color-coded card — red for likely-real
 issues, grey for likely-noise — sorted most-likely-real first, each with
 its CWE reference, the plain-language reason for the verdict, and the
 offending code snippet. It uses the exact same triage logic as the CLI, so
-the two always agree.
+the two always agree. The UI runs in debug mode for local development;
+disable debug before any public deployment.
 
 ## Limitations
 
@@ -163,8 +176,13 @@ bandit-triage/
 ├── docs/
 │   ├── architecture.md            # structure & data flow, with diagrams
 │   └── building-the-dataset.md    # how the dataset is grown from real findings
-├── inspect_findings.py            # helper to inspect/label real Bandit findings
-├── train_classifier.py
+├── templates/
+│   └── index.html                 # web UI markup
+├── static/
+│   └── style.css                  # web UI styling (dark theme)
+├── inspect_findings.py            # helper to inspect real Bandit findings by rule
+├── add_to_dataset.py              # helper to add labeled findings to the dataset
+├── dataset_stats.py               # trains the model + writes per-rule stats and misclassified reports
 ├── web_ui.py                      # optional local web UI
 └── requirements.txt
 ```

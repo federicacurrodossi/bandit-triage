@@ -14,8 +14,8 @@ otherwise the model would receive inconsistent input.
 ```mermaid
 flowchart TD
     subgraph TRAIN["PHASE 1 — Training (once)"]
-        A["data/labeled_findings.json<br/>20 hand-labeled examples"] --> B["features.py<br/>signals → numeric vector"]
-        B --> C["train_classifier.py<br/>trains the model"]
+        A["data/labeled_findings.json<br/>hand-labeled examples"] --> B["features.py<br/>signals → numeric vector"]
+        B --> C["dataset_stats.py<br/>trains the model + reports stats"]
         C --> D["model.json<br/>stores the learned weights"]
     end
 
@@ -35,15 +35,15 @@ flowchart LR
     loader["loader.py<br/>reads the JSON"]
     features["features.py<br/>text → numbers"]
     classifier["classifier.py<br/>model + explanation"]
-    train["train_classifier.py"]
+    stats["dataset_stats.py<br/>trains + reports"]
     cli["cli.py"]
     web["web_ui.py"]
 
     loader --> features
     features --> classifier
-    train --> loader
-    train --> features
-    train --> classifier
+    stats --> loader
+    stats --> features
+    stats --> classifier
     cli --> loader
     cli --> features
     cli --> classifier
@@ -61,17 +61,21 @@ flowchart LR
   test file" — only numbers. This file turns each `Finding` into a list of
   numeric signals: is Bandit's own confidence/severity high or low? Does the
   file path look like a test file? Does the flagged code contain a
-  placeholder-like word? Does tainted external input appear nearby? Which
-  Bandit rule fired? Every number is a clue a human reviewer would actually
-  look for by hand.
+  placeholder-like word? Does tainted external input appear nearby? Does the
+  flagged value look like a real secret? Which Bandit rule fired? Every
+  number is a clue a human reviewer would actually look for by hand.
 - **`classifier.py`** — a small logistic regression model. Each feature gets
   an importance weight; the model adds them up (weighted) and produces a
   probability between 0 and 1 ("how likely is this a real issue?"). Because
   it's just "weight × value" summed, it can also report *which* feature
   drove a given prediction — that's the explanation.
-- **`train_classifier.py`** — takes all the labeled examples, runs them
+- **`dataset_stats.py`** — takes all the labeled examples, runs them
   through `features.py`, and adjusts the weights until the model's guesses
-  match the known labels. Saves the result to `model.json`.
+  match the known labels, saving the result to `model.json`. It also writes
+  two Markdown reports: `dataset_stats.md` (per-rule true/false counts,
+  training-set accuracy, and a balance hint) and `misclassified.md` (the
+  findings where the model disagrees with the hand label). It's the single
+  command you run after changing the dataset.
 - **`cli.py`** and **`web_ui.py`** — the two interfaces. They do the same
   thing (load a report, triage it, show the re-ranked and explained
   results), one from the terminal and one in the browser. Both import the
@@ -93,7 +97,7 @@ knows about it:
   including a dedicated "which rule is this" feature (a one-hot flag). Its
   judgment is fully informed.
 - **A finding whose rule is NOT in the list** — all the rule flags stay at
-  zero, so the model falls back to the six generic context signals only (is
+  zero, so the model falls back to the generic context signals only (is
   it a test file? placeholder-like value? tainted input nearby? etc.). It
   still returns a prediction, but a less informed, less reliable one for that
   rule type, because it has no idea *what kind* of issue it is.
@@ -109,7 +113,7 @@ To extend the model to a new rule (e.g. B303), the order is:
 1. Collect labeled examples of that rule (run Bandit, apply the labeling
    policy) and add them to `data/labeled_findings.json`.
 2. Add the rule ID to `KNOWN_TEST_IDS` in `features.py`.
-3. Retrain with `python3 train_classifier.py`.
+3. Retrain with `python3 dataset_stats.py`.
 
 ## Why these features were chosen
 
@@ -122,9 +126,13 @@ rather than a black box.
 
 - **`confidence` and `severity`** — Bandit's own judgment. Worth giving to
   the model as input, even though (as the project shows) they shouldn't be
-  taken at face value. The model learns *how much* to trust them.
+  taken at face value. The model learns *how much* to trust them. Note that
+  for some rules (notably B105) these are effectively constant, so they carry
+  no distinguishing information for those rules — which is exactly why the
+  other features matter.
 - **`is_test_file`** — captures "where is it?". A finding in a test file is
-  almost always noise.
+  almost always noise. This is the dominant signal for B101 (`assert`
+  usage): an assert in a test is fine, an assert in production code is not.
 - **`has_dummy_keyword`** — captures "what's the value?". Words like
   `changeme`, `test`, or `fake` suggest a placeholder, not a real secret.
 - **`has_tainted_input`** — captures "does user input reach this?". This is
@@ -157,7 +165,7 @@ A common misconception is that we assign the importance of each feature by
 hand — deciding, say, that "test file" counts for -0.8. We do **not**. The
 weights are **learned by the model from the labeled data** during training.
 
-The training process (in `train_classifier.py`), simplified:
+The training process (in `dataset_stats.py`), simplified:
 
 1. The model starts with essentially arbitrary weights.
 2. It looks at a labeled example (a finding plus its true/false label).
