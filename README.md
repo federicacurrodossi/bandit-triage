@@ -5,6 +5,15 @@ A small, explainable classifier that re-prioritizes findings from
 security static analyzer) by predicted true-positive likelihood, instead of
 Bandit's own severity level alone.
 
+## Documentation
+
+- [`docs/architecture.md`](docs/architecture.md) — a visual explanation of the
+  project structure and data flow (with diagrams), plus a file-by-file
+  breakdown.
+- [`docs/building-the-dataset.md`](docs/building-the-dataset.md) — the
+  step-by-step process for growing the training dataset from real Bandit
+  findings on real open-source projects, including the labeling policy used.
+
 ## The problem
 
 Static analysis tools are well documented to have high false-positive
@@ -67,9 +76,6 @@ Example output:
 - **`cli.py`** — runs the model against a real Bandit report and prints a
   re-prioritized, explained list.
 
-For a visual explanation of the structure, see [docs/architecture.md](docs/architecture.md).
-
-
 ## The dataset
 
 `data/labeled_findings.json` contains 20 hand-labeled example findings
@@ -113,13 +119,14 @@ the two always agree.
 
 ## Honest limitations
 
-- **The training set is small (16 examples) and hand-written, not pulled
-  from real-world triage decisions.** This is a research prototype
-  demonstrating the approach, not a validated production tool. With more
-  data, the model's explanations would likely become more consistently
-  intuitive — on the current dataset, one or two predictions land on a
-  technically-correct but less obviously-relevant top explanation, a
-  visible symptom of training on so few examples.
+- **The training set is small and partly hand-written.** It started from
+  synthetic examples and is being grown with real findings labeled by hand
+  (see [`docs/building-the-dataset.md`](docs/building-the-dataset.md)). This
+  is a research prototype demonstrating the approach, not a validated
+  production tool. With more data, the model's explanations would likely
+  become more consistently intuitive — on the current small dataset, one or
+  two predictions land on a technically-correct but less obviously-relevant
+  top explanation, a visible symptom of training on so few examples.
 - **The features are hand-designed heuristics, not learned representations
   of code semantics.** A more advanced version could use an AST-based or
   code-embedding representation instead of regex-based signals like
@@ -128,7 +135,7 @@ the two always agree.
   anything Bandit itself misses**, and it inherits any blind spots in
   Bandit's own rule set.
 - **Every rule type needs its own true-positive/false-positive examples to
-  be useful.** The current 5 rule types were chosen because they have
+  be useful.** The current rule types were chosen because they have
   well-understood, describable true/false-positive patterns; extending
   coverage to Bandit's full rule set would need proportionally more labeled
   data per rule.
@@ -145,6 +152,11 @@ bandit-triage/
 ├── data/
 │   ├── labeled_findings.json     # training data
 │   └── sample_bandit_report.json # held-out test data
+├── docs/
+│   ├── architecture.md            # structure & data flow, with diagrams
+│   └── building-the-dataset.md    # how the dataset is grown from real findings
+├── inspect_findings.py            # helper to inspect/label real Bandit findings
 ├── train_classifier.py
+├── web_ui.py                      # optional local web UI
 └── requirements.txt
 ```

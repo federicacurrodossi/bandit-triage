@@ -2,3 +2,6 @@ venv/
 __pycache__/
 *.pyc
 model.json
+target_flask/
+real_findings.json
+findings_*.txt
