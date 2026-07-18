@@ -33,11 +33,27 @@ needs both:
   are the most authoritative source of **true positives**. For B105 they
   contain realistic hardcoded-secret patterns that a clean project like Flask
   simply doesn't have.
+- **Intentionally-Vulnerable-Python-Application**
+  (`github.com/mukxl/Intentionally-Vulnerable-Python-Application`) — a
+  deliberately vulnerable teaching repo. Its hardcoded `admin` /
+  `password123` credential is a clear B105 true positive: a stored
+  authentication credential in application (non-test) code. This is the kind
+  of realistic case clean projects don't contain. Used deliberately and
+  disclosed here as an intentionally vulnerable source; the finding was still
+  labeled by hand using the policy below, not assumed true just because the
+  repo is labeled "vulnerable".
+
+Sources that were tried but did not contribute: **flask_config_example**
+(`github.com/MirelaI/flask_config_example`) was scanned but produced no B105
+findings, because it keeps its secrets in a `config.json` file rather than in
+Python code, and Bandit only analyzes `.py` files. It's recorded here for
+transparency — not every source yields usable findings, and knowing why is
+part of the process.
 
 This split matters: training only on Flask would teach the model only what
-noise looks like. Pairing it with Bandit's intentional examples gives the
-model both sides — real issues and false alarms — which is what it needs to
-tell them apart.
+noise looks like. Pairing it with Bandit's intentional examples and a
+vulnerable teaching repo gives the model both sides — real issues and false
+alarms — which is what it needs to tell them apart.
 
 Note on true positives: examples from intentionally-vulnerable or
 example repositories are realistic but deliberately constructed (a password
@@ -158,11 +174,3 @@ code), the password is `"a"`, an obviously fake single character (question 2
 redirect (question 3 → harmless). All three point the same way.
 
 **Label: `false_positive`.**
-
-## Honest note for the README
-
-Documenting this process is itself a strength of the project: it shows the
-dataset was built by applying a consistent, explainable labeling policy to
-real findings from real projects — not by inventing convenient examples.
-When the dataset grows this way, the model's evaluation becomes far more
-credible.
