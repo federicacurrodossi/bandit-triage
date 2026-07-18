@@ -1,6 +1,5 @@
 {
   "_note": "Each entry matches Bandit's real JSON finding schema (filename, code, issue_confidence, issue_severity, issue_text, line_number, test_id, test_name). The 'label' field is NOT something Bandit produces -- it's a ground-truth annotation added by hand for training this triage classifier: true_positive means a real, exploitable issue; false_positive means Bandit correctly matched the pattern but the finding isn't actually a security risk in context.",
-
   "findings": [
     {
       "filename": "app/auth/login.py",
@@ -154,7 +153,10 @@
       "line_number": 70,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "issue_cwe": {"id": 89, "link": "https://cwe.mitre.org/data/definitions/89.html"},
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
       "label": "true_positive"
     },
     {
@@ -166,7 +168,10 @@
       "line_number": 80,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "issue_cwe": {"id": 89, "link": "https://cwe.mitre.org/data/definitions/89.html"},
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
       "label": "false_positive"
     },
     {
@@ -178,7 +183,10 @@
       "line_number": 5,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "issue_cwe": {"id": 89, "link": "https://cwe.mitre.org/data/definitions/89.html"},
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
       "label": "false_positive"
     },
     {
@@ -190,7 +198,10 @@
       "line_number": 15,
       "test_id": "B614",
       "test_name": "pytorch_load",
-      "issue_cwe": {"id": 502, "link": "https://cwe.mitre.org/data/definitions/502.html"},
+      "issue_cwe": {
+        "id": 502,
+        "link": "https://cwe.mitre.org/data/definitions/502.html"
+      },
       "label": "true_positive"
     },
     {
@@ -202,7 +213,10 @@
       "line_number": 23,
       "test_id": "B614",
       "test_name": "pytorch_load",
-      "issue_cwe": {"id": 502, "link": "https://cwe.mitre.org/data/definitions/502.html"},
+      "issue_cwe": {
+        "id": 502,
+        "link": "https://cwe.mitre.org/data/definitions/502.html"
+      },
       "label": "false_positive"
     },
     {
@@ -214,7 +228,10 @@
       "line_number": 31,
       "test_id": "B615",
       "test_name": "huggingface_unsafe_download",
-      "issue_cwe": {"id": 494, "link": "https://cwe.mitre.org/data/definitions/494.html"},
+      "issue_cwe": {
+        "id": 494,
+        "link": "https://cwe.mitre.org/data/definitions/494.html"
+      },
       "label": "true_positive"
     },
     {
@@ -226,7 +243,109 @@
       "line_number": 42,
       "test_id": "B615",
       "test_name": "huggingface_unsafe_download",
-      "issue_cwe": {"id": 494, "link": "https://cwe.mitre.org/data/definitions/494.html"},
+      "issue_cwe": {
+        "id": 494,
+        "link": "https://cwe.mitre.org/data/definitions/494.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/examples/tutorial/tests/test_auth.py",
+      "code": "12     # test that successful registration redirects to the login page\n13     response = client.post(\"/auth/register\", data={\"username\": \"a\", \"password\": \"a\"})\n14     assert response.headers[\"Location\"] == \"/auth/login\"\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'a'",
+      "line_number": 13,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/src/flask/app.py",
+      "code": "210             \"PROPAGATE_EXCEPTIONS\": None,\n211             \"SECRET_KEY\": None,\n212             \"SECRET_KEY_FALLBACKS\": None,\n213             \"PERMANENT_SESSION_LIFETIME\": timedelta(days=31),\n214             \"USE_X_SENDFILE\": False,\n215             \"TRUSTED_HOSTS\": None,\n216             \"SERVER_NAME\": None,\n217             \"APPLICATION_ROOT\": \"/\",\n218             \"SESSION_COOKIE_NAME\": \"session\",\n219             \"SESSION_COOKIE_DOMAIN\": None,\n220             \"SESSION_COOKIE_PATH\": None,\n221             \"SESSION_COOKIE_HTTPONLY\": True,\n222             \"SESSION_COOKIE_SECURE\": False,\n223             \"SESSION_COOKIE_PARTITIONED\": False,\n224             \"SESSION_COOKIE_SAMESITE\": None,\n225             \"SESSION_REFRESH_EACH_REQUEST\": True,\n226             \"MAX_CONTENT_LENGTH\": None,\n227             \"MAX_FORM_MEMORY_SIZE\": 500_000,\n228             \"MAX_FORM_PARTS\": 1_000,\n229             \"SEND_FILE_MAX_AGE_DEFAULT\": None,\n230             \"TRAP_BAD_REQUEST_ERRORS\": None,\n231             \"TRAP_HTTP_EXCEPTIONS\": False,\n232             \"EXPLAIN_TEMPLATE_LOADING\": False,\n233             \"PREFERRED_URL_SCHEME\": \"http\",\n234             \"TEMPLATES_AUTO_RELOAD\": None,\n235             \"MAX_COOKIE_SIZE\": 4093,\n236             \"PROVIDE_AUTOMATIC_OPTIONS\": True,\n237         }\n238     )\n239 \n240     #: The class that is used for request objects.  See :class:`~flask.Request`\n241     #: for more information.\n242     request_class: type[Request] = Request\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'None'",
+      "line_number": 211,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/src/flask/app.py",
+      "code": "211             \"SECRET_KEY\": None,\n212             \"SECRET_KEY_FALLBACKS\": None,\n213             \"PERMANENT_SESSION_LIFETIME\": timedelta(days=31),\n214             \"USE_X_SENDFILE\": False,\n215             \"TRUSTED_HOSTS\": None,\n216             \"SERVER_NAME\": None,\n217             \"APPLICATION_ROOT\": \"/\",\n218             \"SESSION_COOKIE_NAME\": \"session\",\n219             \"SESSION_COOKIE_DOMAIN\": None,\n220             \"SESSION_COOKIE_PATH\": None,\n221             \"SESSION_COOKIE_HTTPONLY\": True,\n222             \"SESSION_COOKIE_SECURE\": False,\n223             \"SESSION_COOKIE_PARTITIONED\": False,\n224             \"SESSION_COOKIE_SAMESITE\": None,\n225             \"SESSION_REFRESH_EACH_REQUEST\": True,\n226             \"MAX_CONTENT_LENGTH\": None,\n227             \"MAX_FORM_MEMORY_SIZE\": 500_000,\n228             \"MAX_FORM_PARTS\": 1_000,\n229             \"SEND_FILE_MAX_AGE_DEFAULT\": None,\n230             \"TRAP_BAD_REQUEST_ERRORS\": None,\n231             \"TRAP_HTTP_EXCEPTIONS\": False,\n232             \"EXPLAIN_TEMPLATE_LOADING\": False,\n233             \"PREFERRED_URL_SCHEME\": \"http\",\n234             \"TEMPLATES_AUTO_RELOAD\": None,\n235             \"MAX_COOKIE_SIZE\": 4093,\n236             \"PROVIDE_AUTOMATIC_OPTIONS\": True,\n237         }\n238     )\n239 \n240     #: The class that is used for request objects.  See :class:`~flask.Request`\n241     #: for more information.\n242     request_class: type[Request] = Request\n243 \n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'None'",
+      "line_number": 212,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/tests/test_basic.py",
+      "code": "410     # Change secret key, session can't be loaded and appears empty\n411     app.secret_key = \"? key\"\n412     assert client.get().json == {}\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: '? key'",
+      "line_number": 411,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/tests/test_config.py",
+      "code": "9 TEST_KEY = \"foo\"\n10 SECRET_KEY = \"config\"\n11 \n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'config'",
+      "line_number": 10,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/tests/test_config.py",
+      "code": "13 def common_object_test(app):\n14     assert app.secret_key == \"config\"\n15     assert app.config[\"TEST_KEY\"] == \"foo\"\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'config'",
+      "line_number": 14,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/tests/test_config.py",
+      "code": "111     app = flask.Flask(__name__)\n112     app.config.from_mapping({\"SECRET_KEY\": \"config\", \"TEST_KEY\": \"foo\"})\n113     common_object_test(app)\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'config'",
+      "line_number": 112,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/tests/test_config.py",
+      "code": "136     class Test(Base):\n137         SECRET_KEY = \"config\"\n138 \n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'config'",
+      "line_number": 137,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_flask/tests/test_reqctx.py",
+      "code": "214     app = CustomFlask(__name__)\n215     app.secret_key = \"secret_key\"\n216 \n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'secret_key'",
+      "line_number": 215,
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string",
       "label": "false_positive"
     }
   ]
