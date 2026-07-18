@@ -1,0 +1,83 @@
+:root {
+  --tp: #ff5c6c;         /* likely real -- red/pink alert */
+  --fp: #5a6673;         /* likely noise -- muted slate */
+  --bg: #0d1117;         /* near-black background */
+  --panel: #161b22;      /* card / panel background */
+  --panel-2: #1c2330;    /* nested surfaces */
+  --border: #2a313c;     /* subtle borders */
+  --text: #e6edf3;       /* primary text */
+  --text-dim: #8b949e;   /* secondary text */
+  --accent: #3fb950;     /* terminal green accent */
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0; background: var(--bg); color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+header {
+  background: linear-gradient(180deg, #161b22 0%, #10151c 100%);
+  color: var(--text); padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+}
+header h1 {
+  margin: 0; font-size: 18px; font-weight: 600; letter-spacing: 0.2px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+header h1::before { content: "▍"; color: var(--accent); margin-right: 8px; }
+header p { margin: 6px 0 0; font-size: 13px; color: var(--text-dim); }
+main { max-width: 880px; margin: 0 auto; padding: 28px 32px; }
+textarea {
+  width: 100%; height: 160px; font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 12px; padding: 12px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--panel); color: var(--text);
+  resize: vertical; outline: none;
+}
+textarea:focus { border-color: var(--accent); }
+textarea::placeholder { color: var(--text-dim); }
+.btnrow { margin: 14px 0 28px; display: flex; gap: 10px; }
+button {
+  font-size: 14px; padding: 9px 20px; border-radius: 8px;
+  border: 1px solid var(--accent); background: var(--accent); color: #0d1117;
+  cursor: pointer; font-weight: 600; transition: opacity 0.15s;
+}
+button:hover { opacity: 0.85; }
+button.secondary {
+  background: transparent; color: var(--text); border-color: var(--border);
+}
+.summary {
+  font-size: 13px; color: var(--text-dim); margin-bottom: 18px;
+  font-family: ui-monospace, monospace;
+}
+.card {
+  background: var(--panel); border-radius: 10px; border: 1px solid var(--border);
+  padding: 16px 18px; margin-bottom: 14px; border-left: 3px solid var(--fp);
+}
+.card.tp { border-left-color: var(--tp); }
+.cardhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.loc {
+  font-family: ui-monospace, "SF Mono", monospace; font-size: 13px;
+  font-weight: 600; color: var(--text);
+}
+.badge {
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;
+  white-space: nowrap; letter-spacing: 0.3px;
+}
+.badge.tp { background: rgba(255, 92, 108, 0.15); color: var(--tp); border: 1px solid rgba(255, 92, 108, 0.3); }
+.badge.fp { background: rgba(90, 102, 115, 0.15); color: var(--text-dim); border: 1px solid var(--border); }
+.rule { font-size: 12px; color: var(--text-dim); font-family: ui-monospace, monospace; margin-top: 2px; }
+.issue { font-size: 13px; margin: 8px 0; color: var(--text); }
+.reason {
+  font-size: 13px; color: var(--text); background: var(--panel-2);
+  padding: 8px 12px; border-radius: 6px; margin-top: 8px;
+  border: 1px solid var(--border);
+}
+.cwe { font-size: 12px; margin-top: 6px; }
+.cwe a { color: var(--accent); text-decoration: none; }
+.cwe a:hover { text-decoration: underline; }
+pre.code {
+  font-size: 12px; background: #0a0e14; color: #c9d1d9;
+  padding: 10px 12px; border-radius: 6px; overflow-x: auto; margin: 10px 0 0;
+  border: 1px solid var(--border);
+}
+.error { color: var(--tp); font-size: 14px; }

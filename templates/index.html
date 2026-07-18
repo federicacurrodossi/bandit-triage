@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bandit triage</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Bandit Triage</h1>
+    <p>Re-prioritizes Bandit findings by predicted true-positive likelihood, with explanations.</p>
+  </header>
+  <main>
+    <form method="post">
+      <textarea name="report" placeholder="Paste a Bandit JSON report here (bandit -r . -f json)...">{{ report_text }}</textarea>
+      <div class="btnrow">
+        <button type="submit">Triage findings</button>
+        <button type="submit" name="load_example" value="1" class="secondary">Load example report</button>
+      </div>
+    </form>
+
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+    {% if results is not none %}
+      <p class="summary">{{ results|length }} findings ·
+        {{ results|selectattr('label', 'equalto', 'likely_true_positive')|list|length }} likely true positive,
+        {{ results|selectattr('label', 'equalto', 'likely_false_positive')|list|length }} likely false positive
+        (sorted, most likely real first)</p>
+
+      {% for r in results %}
+        <div class="card {{ 'tp' if r.label == 'likely_true_positive' else 'fp' }}">
+          <div class="cardhead">
+            <span class="loc">{{ r.filename }}:{{ r.line_number }}</span>
+            <span class="badge {{ 'tp' if r.label == 'likely_true_positive' else 'fp' }}">
+              {{ 'LIKELY REAL' if r.label == 'likely_true_positive' else 'LIKELY NOISE' }} · p={{ '%.2f'|format(r.prob) }}
+            </span>
+          </div>
+          <div class="rule">{{ r.test_id }} {{ r.test_name }} · Bandit severity: {{ r.bandit_severity }}</div>
+          <div class="issue">{{ r.issue_text }}</div>
+          {% if r.cwe_id %}<div class="cwe">Reference: <a href="{{ r.cwe_link }}" target="_blank">CWE-{{ r.cwe_id }}</a></div>{% endif %}
+          <div class="reason"><strong>Why:</strong> {{ r.reason }}</div>
+          {% if r.code %}<pre class="code">{{ r.code.rstrip() }}</pre>{% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </main>
+</body>
+</html>

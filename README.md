@@ -21,8 +21,8 @@ Reference for dataset construction: https://bandit.readthedocs.io/en/latest/plug
 Static analysis tools are well documented to have high false-positive
 rates in practice — deep-learning vulnerability detectors in particular are
 known to perform well on curated benchmarks but degrade sharply on
-real-world codebases, and recent research (UntrustVul, 2025) is
-specifically about identifying which vulnerability-detector alerts are
+real-world codebases, and recent research ([UntrustVul, 2025](https://arxiv.org/abs/2503.14852))
+is specifically about identifying which vulnerability-detector alerts are
 actually trustworthy. Bandit is excellent at *finding* patterns, but it has
 no way to know that `assert` in your test suite is fine, that a hardcoded
 `"changeme"` isn't a real secret, or that a `shell=True` call with a fully
@@ -129,8 +129,20 @@ and it renders each finding as a color-coded card — red for likely-real
 issues, grey for likely-noise — sorted most-likely-real first, each with
 its CWE reference, the plain-language reason for the verdict, and the
 offending code snippet. It uses the exact same triage logic as the CLI, so
-the two always agree. The UI runs in debug mode for local development;
-disable debug before any public deployment.
+the two always agree.
+
+**How it's built.** The UI is a [Flask](https://flask.palletsprojects.com/)
+app — a lightweight Python web framework, chosen so the interface stays in
+the same language as the rest of the project and adds no heavy dependencies.
+A single route accepts the pasted report via an HTML form, passes it to the
+same `triage_report` logic the CLI uses, and renders the results with a
+Jinja2 template (`templates/index.html`) styled by a separate stylesheet
+(`static/style.css`). It runs over plain HTTP on `localhost`, which is
+appropriate here: the browser and server are the same machine, so no data
+crosses a network — HTTPS would only matter for a public deployment. For the
+same reason it runs in Flask's debug mode (auto-reload on file changes);
+both debug mode and plain HTTP should be turned off if this were ever exposed
+beyond localhost.
 
 ## Limitations
 
