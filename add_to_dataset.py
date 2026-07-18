@@ -23,7 +23,6 @@ that rule).
 Nothing is added until you confirm, and the dataset is backed up first.
 """
 import json
-import shutil
 import sys
 
 DATASET_PATH = "data/labeled_findings.json"
@@ -99,9 +98,6 @@ def main():
         print("Cancelled. Nothing changed.")
         sys.exit(0)
 
-    # back up the dataset before touching it
-    shutil.copy(DATASET_PATH, DATASET_PATH + ".bak")
-
     with open(DATASET_PATH) as f:
         dataset = json.load(f)
     dataset["findings"].extend(to_add)
@@ -110,7 +106,6 @@ def main():
 
     print(f"\nDone. Added {len(to_add)} finding(s).")
     print(f"Dataset now has {len(dataset['findings'])} findings total.")
-    print(f"(A backup of the previous version was saved to {DATASET_PATH}.bak)")
 
 
 if __name__ == "__main__":
