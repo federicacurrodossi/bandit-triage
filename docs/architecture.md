@@ -132,6 +132,19 @@ rather than a black box.
   is exploitable; one with a fixed command is not.
 - **`has_dynamic_concat`** — captures whether a string is built dynamically
   (injection risk) versus a fixed literal.
+- **`secret_score`** — a gradual 0..1 score of how much the flagged value
+  looks like a real secret rather than a placeholder. It combines two simple,
+  explainable signals (averaged): the value's length (real secrets tend to be
+  long) and its character variety (real secrets mix lowercase, uppercase,
+  digits, and symbols, while placeholders like `blerg` use just one kind).
+  This was added specifically because for B105 findings the other signals are
+  weak: Bandit's severity/confidence are effectively constant for that rule,
+  so the model needed a way to tell `password = "blerg"` (placeholder) from
+  `my_secret = "d6s$f9g!j8mg7hw?n&2"` (looks real). It's intentionally
+  imperfect — a long placeholder like `"this cool password"` can still score
+  high — but it gives the model a useful clue it didn't have before. A future
+  version could add a dictionary-word check (real words like `secret` or
+  `password` are likely placeholders).
 - **`rule_Bxxx`** — tells the model *what kind* of issue it is.
 
 The guiding rule: a feature earns its place only if it corresponds to

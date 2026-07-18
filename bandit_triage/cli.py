@@ -22,6 +22,7 @@ FEATURE_DESCRIPTIONS = {
     "has_dummy_keyword": "code contains a placeholder-like word (test/dummy/fake/changeme/...)",
     "has_tainted_input": "code reads from an external/user-controlled source nearby",
     "has_dynamic_concat": "code builds a string dynamically (concatenation/f-string/.format) rather than using a static literal",
+    "secret_score": "the flagged value looks like a real secret (long and mixes character types)",
 }
 for _tid in ["B105", "B101", "B602", "B301", "B608", "B614", "B615"]:
     FEATURE_DESCRIPTIONS[f"rule_{_tid}"] = f"this is a {_tid} finding"
@@ -33,6 +34,9 @@ def describe_contribution(c: dict) -> str:
     desc = FEATURE_DESCRIPTIONS.get(name, name)
     if name in ("confidence", "severity"):
         return f"{desc} is {'high' if present else 'low'}"
+    if name == "secret_score":
+        # gradual 0..1 value: describe as high vs low, not present/absent
+        return desc if present else "the flagged value looks more like a placeholder than a real secret"
     return desc if present else f"NOT true that {desc}"
 
 

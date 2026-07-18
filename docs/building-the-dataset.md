@@ -19,24 +19,65 @@ mostly represent the "noise" case a reviewer meets in practice (asserts in
 tests, dummy passwords in examples, etc.) — good material for learning to
 tell signal from noise.
 
+### Sources used so far
+
+Different sources contribute different kinds of examples, and a good dataset
+needs both:
+
+- **Flask** (`github.com/pallets/flask`) — a mature, well-reviewed project.
+  Its findings are almost entirely **false positives** (dummy passwords in
+  tests, `SECRET_KEY: None` defaults, placeholder values), because a clean
+  project has no real secrets committed to code. Good for the "noise" side.
+- **Bandit's own examples** (`github.com/PyCQA/bandit`, the `examples/`
+  folder) — files written deliberately to trigger Bandit's rules, so they
+  are the most authoritative source of **true positives**. For B105 they
+  contain realistic hardcoded-secret patterns that a clean project like Flask
+  simply doesn't have.
+
+This split matters: training only on Flask would teach the model only what
+noise looks like. Pairing it with Bandit's intentional examples gives the
+model both sides — real issues and false alarms — which is what it needs to
+tell them apart.
+
+Note on true positives: examples from intentionally-vulnerable or
+example repositories are realistic but deliberately constructed (a password
+put there on purpose). That's fine and expected — a genuinely leaked
+production secret is rare and hard to find, for good reason. What matters is
+that the example has the right *shape* of a true positive: a realistic-looking
+value, in production (non-test) code, actually used to authenticate. This is
+disclosed openly rather than presented as scraped real-world leaks.
+
 ## Step-by-step process
 
 ### 1. Get a real project to scan
 
 ```bash
+# a clean project (mostly false positives)
 git clone --depth 1 https://github.com/pallets/flask.git target_flask
+
+# Bandit's own intentional examples (a good source of true positives)
+git clone --depth 1 https://github.com/PyCQA/bandit.git target_bandit
 ```
+
+Remember to add the cloned folders and generated reports to `.gitignore`
+(`target_flask/`, `target_bandit/`, `real_findings.json`,
+`bandit_examples.json`, `findings_*.txt`) so they never get committed to your
+own repo.
 
 ### 2. Run Bandit on it and save the JSON output
 
 ```bash
+# scan Flask
 bandit -r target_flask -f json -o real_findings.json
+
+# scan Bandit's examples folder (for true positives)
+bandit -r target_bandit/examples -f json -o bandit_examples.json
 ```
 
-This produces `real_findings.json`: the raw findings, exactly as Bandit
-reports them. Note that Bandit findings do **not** contain a `label` field —
-Bandit flags patterns but never judges whether they're real problems in
-context. Adding that judgment is our job.
+This produces JSON reports: the raw findings, exactly as Bandit reports them.
+Note that Bandit findings do **not** contain a `label` field — Bandit flags
+patterns but never judges whether they're real problems in context. Adding
+that judgment is our job.
 
 ### 3. Inspect the findings one rule at a time
 
