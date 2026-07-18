@@ -1,4 +1,4 @@
-# bandit-triage
+# Bandit triage
 
 A small, explainable classifier that re-prioritizes findings from
 [Bandit](https://github.com/PyCQA/bandit) (Python's most widely used
