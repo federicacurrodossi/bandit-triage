@@ -110,3 +110,57 @@ To extend the model to a new rule (e.g. B303), the order is:
    policy) and add them to `data/labeled_findings.json`.
 2. Add the rule ID to `KNOWN_TEST_IDS` in `features.py`.
 3. Retrain with `python3 train_classifier.py`.
+
+## Why these features were chosen
+
+Each feature in `features.py` was picked because it captures a signal a human
+reviewer actually looks at when deciding whether a finding is real or noise —
+the same "three questions" the labeling policy uses (where is it? what's the
+value? what does the code do with it?). The goal was that every feature be
+explainable in plain words, which is what makes the whole model explainable
+rather than a black box.
+
+- **`confidence` and `severity`** — Bandit's own judgment. Worth giving to
+  the model as input, even though (as the project shows) they shouldn't be
+  taken at face value. The model learns *how much* to trust them.
+- **`is_test_file`** — captures "where is it?". A finding in a test file is
+  almost always noise.
+- **`has_dummy_keyword`** — captures "what's the value?". Words like
+  `changeme`, `test`, or `fake` suggest a placeholder, not a real secret.
+- **`has_tainted_input`** — captures "does user input reach this?". This is
+  the strongest signal of real danger: a `shell=True` call fed by user input
+  is exploitable; one with a fixed command is not.
+- **`has_dynamic_concat`** — captures whether a string is built dynamically
+  (injection risk) versus a fixed literal.
+- **`rule_Bxxx`** — tells the model *what kind* of issue it is.
+
+The guiding rule: a feature earns its place only if it corresponds to
+something a reviewer could point at and explain. Opaque, hard-to-explain
+signals were deliberately avoided.
+
+## Where the weights come from (they are learned, not hand-set)
+
+A common misconception is that we assign the importance of each feature by
+hand — deciding, say, that "test file" counts for -0.8. We do **not**. The
+weights are **learned by the model from the labeled data** during training.
+
+The training process (in `train_classifier.py`), simplified:
+
+1. The model starts with essentially arbitrary weights.
+2. It looks at a labeled example (a finding plus its true/false label).
+3. It makes a prediction with its current weights.
+4. It compares the prediction to the true label; if it was wrong, it nudges
+   the weights slightly in the direction that would have been correct.
+5. It repeats across all examples, many times, until its predictions match
+   the labels as closely as possible.
+
+So the final weights reflect **what is actually true in the labeled
+examples**, not our opinion. This is exactly why the quality of the labels
+matters so much: label well, and the model learns sensible weights; label
+carelessly, and it learns nonsense. It's also why the dataset — not the code
+— is the real driver of how good the tool is.
+
+Because this is a simple logistic regression, we can also *read* the learned
+weights back out and see what the model concluded — which is precisely what
+the explanation feature does when it reports, for a given finding, which
+signals pushed it toward "real" or "noise".
