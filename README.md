@@ -117,7 +117,7 @@ its CWE reference, the plain-language reason for the verdict, and the
 offending code snippet. It uses the exact same triage logic as the CLI, so
 the two always agree.
 
-## Honest limitations
+## Limitations
 
 - **The training set is small and partly hand-written.** It started from
   synthetic examples and is being grown with real findings labeled by hand
@@ -139,6 +139,12 @@ the two always agree.
   well-understood, describable true/false-positive patterns; extending
   coverage to Bandit's full rule set would need proportionally more labeled
   data per rule.
+- **The model is only reliable for the rule types present in the dataset.**
+  It still produces a prediction for any Bandit finding, but for rules it
+  wasn't trained on it falls back to generic context signals only, without
+  knowing what kind of issue it is — so treat those predictions with more
+  caution. Extending coverage means adding labeled examples of the new rule,
+  not just listing its ID (see `docs/architecture.md`).
 
 ## Repo structure
 

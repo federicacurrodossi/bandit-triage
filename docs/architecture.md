@@ -76,3 +76,37 @@ flowchart LR
   thing (load a report, triage it, show the re-ranked and explained
   results), one from the terminal and one in the browser. Both import the
   same logic, so they always agree.
+
+## Which rules the model actually handles well
+
+`features.py` defines a fixed list of known rule IDs:
+
+```python
+KNOWN_TEST_IDS = ["B105", "B101", "B602", "B301", "B608", "B614", "B615"]
+```
+
+This does **not** mean the model refuses other rules. Any finding is
+processed and gets a prediction. The difference is *how much* the model
+knows about it:
+
+- **A finding whose rule is in the list** — the model uses all its signals,
+  including a dedicated "which rule is this" feature (a one-hot flag). Its
+  judgment is fully informed.
+- **A finding whose rule is NOT in the list** — all the rule flags stay at
+  zero, so the model falls back to the six generic context signals only (is
+  it a test file? placeholder-like value? tainted input nearby? etc.). It
+  still returns a prediction, but a less informed, less reliable one for that
+  rule type, because it has no idea *what kind* of issue it is.
+
+The real limit isn't this list — it's the **dataset**. The model can only
+learn to judge rule types it has seen labeled examples of. Adding a rule ID
+to `KNOWN_TEST_IDS` without also adding labeled examples of that rule to
+`data/labeled_findings.json` does nothing useful: the new flag would always
+be zero across the training data, so the model would learn nothing from it.
+
+To extend the model to a new rule (e.g. B303), the order is:
+
+1. Collect labeled examples of that rule (run Bandit, apply the labeling
+   policy) and add them to `data/labeled_findings.json`.
+2. Add the rule ID to `KNOWN_TEST_IDS` in `features.py`.
+3. Retrain with `python3 train_classifier.py`.
