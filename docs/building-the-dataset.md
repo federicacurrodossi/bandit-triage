@@ -137,9 +137,23 @@ context, decided by the reviewer.
 
 ### 5. Add the labeled findings to the dataset
 
-Copy the labeled findings into `data/labeled_findings.json`, in the same
-format as the existing entries (all the fields Bandit produced, plus the
-`label` field added by hand).
+Use the `add_to_dataset.py` helper, which copies findings from a Bandit
+report straight into `data/labeled_findings.json` in the correct format
+(no editing JSON by hand). You give it the report, the rule, the label, and
+which finding numbers to add (the numbers match what `inspect_findings.py`
+prints):
+
+```bash
+# add B105 findings #1 and #3 as false positive
+python3 add_to_dataset.py insecure_app_findings.json B105 false_positive 1,3
+
+# add B105 finding #2 as true positive
+python3 add_to_dataset.py insecure_app_findings.json B105 true_positive 2
+```
+
+It shows a preview, asks for confirmation, and backs up the dataset before
+writing. (You can still edit `data/labeled_findings.json` by hand instead —
+each entry is all the fields Bandit produced plus the hand-added `label`.)
 
 ### 6. If it's a new rule type, register it
 
@@ -147,14 +161,22 @@ If you're adding a rule the model hasn't seen before, also add its ID to
 `KNOWN_TEST_IDS` in `bandit_triage/features.py`, so the model gets a feature
 for it.
 
-### 7. Retrain and check
+### 7. Retrain and check the balance
+
+Run `dataset_stats.py`. It retrains the model on the updated dataset (saving
+`model.json`) and prints a per-rule report: how many true/false positive
+examples each rule has, the training-set accuracy, and a balance hint telling
+you which rules still need more examples.
 
 ```bash
-python3 train_classifier.py
+python3 dataset_stats.py
 ```
 
-Then run the triage on a held-out report to see how it behaves on findings
-it wasn't trained on.
+Note: the accuracy shown is training-set accuracy — a diagnostic measured on
+the same data the model learned from, not a real evaluation. A real
+evaluation needs a separate held-out test set. Use the report to spot which
+rules are unbalanced or which the model struggles with, not to claim
+real-world accuracy.
 
 ## Worked example
 
@@ -174,3 +196,11 @@ code), the password is `"a"`, an obviously fake single character (question 2
 redirect (question 3 → harmless). All three point the same way.
 
 **Label: `false_positive`.**
+
+## Honest note for the README
+
+Documenting this process is itself a strength of the project: it shows the
+dataset was built by applying a consistent, explainable labeling policy to
+real findings from real projects — not by inventing convenient examples.
+When the dataset grows this way, the model's evaluation becomes far more
+credible.

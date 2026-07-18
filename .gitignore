@@ -11,3 +11,5 @@ bandit_examples.json
 flask_config_findings.json
 target_vuln/
 vuln_findings.json
+target_insecure_app/
+insecure_app_findings.json
