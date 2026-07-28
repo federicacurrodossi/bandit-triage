@@ -164,7 +164,16 @@ def main():
                 if value:
                     mlines.append(f"- **Flagged value:** `{value}` "
                                   f"(secret_score = {secret_score(value):.2f})")
-                top = pred.contributions[0]
+                # show the signal that pushed most toward the model's own
+                # (wrong) verdict: the most-positive contribution when it
+                # predicted true, the most-negative when it predicted false.
+                # This matches describe_contribution() in cli.py and explains
+                # *why the model decided as it did*, rather than always showing
+                # the most-positive feature regardless of the verdict.
+                if pred.label == "likely_true_positive":
+                    top = pred.contributions[0]
+                else:
+                    top = pred.contributions[-1]
                 mlines.append(f"- **Top signal:** {top['feature']} "
                               f"(contribution = {top['contribution']:+.2f})")
                 mlines.append("")

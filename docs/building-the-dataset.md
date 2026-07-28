@@ -313,3 +313,51 @@ low-risk defensive checks. We label them `true_positive` for a consistent,
 defensible policy — but the ambiguity is deliberately kept, because these grey
 cases are exactly what makes triage a non-trivial judgment rather than a
 lookup.
+## Per-rule reasoning: B301 (pickle)
+
+B301 flags use of Python's `pickle` module (and wrappers around it: `dill`,
+`cPickle`, `jsonpickle`, `pandas.read_pickle`, `shelve`) to **deserialize**
+data. The reason it matters: unpickling runs arbitrary code embedded in the
+byte stream, so `pickle.load()` / `pickle.loads()` on data an attacker
+controls is a remote-code-execution risk. This is the same vulnerability
+class (CWE-502, insecure deserialization) as the `torch.load()` check (B614)
+elsewhere in this dataset. B301 is always severity MEDIUM, confidence HIGH —
+Bandit is sure it's a pickle call; it can't know where the data came from.
+
+The key labeling signal for B301 is **where the deserialized data comes
+from** — trusted (the program's own data) vs. untrusted (anything an attacker
+could influence):
+
+- **untrusted source** → `true_positive`. The pickle stream comes from
+  outside the program's control: an HTTP request body, an uploaded file, a
+  cookie, a network socket, a message queue, a cache like Redis. Here the RCE
+  risk is real. This is exactly what the `has_tainted_input` feature is meant
+  to catch (`request.`, `sys.argv`, uploaded files, etc.).
+- **trusted source** → `false_positive`. The pickle stream is data the program
+  itself produced and controls: a value pickled and unpickled in the same
+  scope, an internal cache file the app wrote, a fixed local artifact. The
+  `pickle` pattern is present, but there is no untrusted input, so the finding
+  is noise.
+
+A worked illustration from Bandit's own `examples/` directory: scanning it
+produced 13 B301 findings across several libraries (`pickle`, `dill`,
+`jsonpickle`, `pandas`, `shelve`). Reading the surrounding code, **every one
+of them deserializes trusted, self-generated data** — for instance
+`pickle_deserialize.py` does `pickle.dump([1, 2, '3'], file_obj)` into an
+in-memory `io.BytesIO()` buffer and then `pickle.load(file_obj)` a few lines
+later. Even the cases that "read from a file object" are reading a buffer the
+same script just wrote, not an external file. These examples exist to check
+that Bandit *detects the pattern*, not to represent real attacks — so they are
+all effectively false positives.
+
+The label depends on context the flagged line doesn't show:
+`pickle.load(file_obj)` looks the same whether `file_obj` is a trusted buffer
+or an attacker's upload. You have to read where the data comes from.
+
+A consequence for dataset construction: real-world open-source projects (and
+Bandit's own examples) are a good source of B301 *false* positives, but genuine *true* positives (pickle on untrusted input) are rarer in scanned code, because deserializing untrusted
+data is a known-dangerous pattern that careful projects avoid. To represent
+the true-positive side, we add constructed examples based on documented unsafe
+patterns (e.g. `pickle.loads(request.data)`, `pickle.load(uploaded_file)`,
+`pickle.loads(base64.b64decode(cookie))`), the same way the B105 true
+positives were supplemented.

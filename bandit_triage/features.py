@@ -17,9 +17,21 @@ DUMMY_KEYWORDS = re.compile(
     r"(test|dummy|example|fake|changeme|demo|placeholder|sample|xxx|todo)",
     re.IGNORECASE,
 )
+# an empty / null / missing flagged value is not a real secret: a config
+# default like SECRET_KEY: None has the shape of a secret (suspicious name,
+# production code) but no actual value. \b matches whole words only, so this
+# won't fire on real secrets that merely contain "none" (e.g. "none_of_it_42").
+EMPTY_VALUE_RE = re.compile(r"^(none|null|nil|)$", re.IGNORECASE)
 TAINTED_INPUT_RE = re.compile(
+    # web / CLI / environment input
     r"(request\.|input\(|sys\.argv|os\.environ\[|form\[|args\.get|"
-    r"uploaded_file|user_upload|download_url|repo_id\s*=\s*request)",
+    r"uploaded_file|user_upload|download_url|repo_id\s*=\s*request|"
+    # external cache stores (redis / memcached): data another process can write
+    r"redis|memcache|cache\.get\(|\.hget\(|\.lpop\(|\.rpop\(|"
+    # raw network sockets
+    r"socket\.|\.recv\(|\.recvfrom\(|"
+    # message queues / brokers (kafka, rabbitmq/pika, celery, sqs)
+    r"\.consume\(|\.poll\(|basic_get|kafka|pika\.|sqs)",
     re.IGNORECASE,
 )
 # crude but useful: a "+" or f-string/format concatenation involving a
@@ -99,12 +111,16 @@ def extract_features(finding: Finding) -> np.ndarray:
     severity = _LEVEL_MAP.get(finding.issue_severity.upper(), 0.5)
 
     is_test_file = 1.0 if re.search(r"test", finding.filename, re.IGNORECASE) else 0.0
-    has_dummy = 1.0 if DUMMY_KEYWORDS.search(finding.code) else 0.0
-    has_tainted = 1.0 if TAINTED_INPUT_RE.search(finding.code) else 0.0
-    has_dynamic = 1.0 if DYNAMIC_CONCAT_RE.search(finding.code) else 0.0
-
     value = extract_flagged_value(finding)
     value_secret_score = secret_score(value)
+
+    # a finding counts as "dummy" if the code contains a placeholder keyword
+    # OR the flagged value itself is empty/null (None, "", null) -- both mean
+    # "not a real secret".
+    has_dummy = 1.0 if (DUMMY_KEYWORDS.search(finding.code)
+                        or EMPTY_VALUE_RE.match(value.strip())) else 0.0
+    has_tainted = 1.0 if TAINTED_INPUT_RE.search(finding.code) else 0.0
+    has_dynamic = 1.0 if DYNAMIC_CONCAT_RE.search(finding.code) else 0.0
 
     rule_flags = [1.0 if finding.test_id == tid else 0.0 for tid in KNOWN_TEST_IDS]
 

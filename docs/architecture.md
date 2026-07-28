@@ -134,10 +134,21 @@ rather than a black box.
   almost always noise. This is the dominant signal for B101 (`assert`
   usage): an assert in a test is fine, an assert in production code is not.
 - **`has_dummy_keyword`** — captures "what's the value?". Words like
-  `changeme`, `test`, or `fake` suggest a placeholder, not a real secret.
-- **`has_tainted_input`** — captures "does user input reach this?". This is
-  the strongest signal of real danger: a `shell=True` call fed by user input
-  is exploitable; one with a fixed command is not.
+  `changeme`, `test`, or `fake` suggest a placeholder, not a real secret. It
+  also fires when the flagged value is itself empty or null (`None`, `null`,
+  `""`): a config default like `SECRET_KEY: None` has the shape of a secret
+  (suspicious name, production code) but no actual value, so it should not be
+  treated as a real credential. The empty-value check matches whole values
+  only, so it won't fire on real secrets that merely contain "none".
+- **`has_tainted_input`** — captures "does data from outside the program's
+  control reach this?". This is the strongest signal of real danger: a
+  `shell=True` call fed by user input is exploitable, and a `pickle.loads` on
+  attacker-controlled bytes is remote code execution, while the same calls on
+  fixed, internal data are not. It recognizes web/CLI/environment input
+  (`request.`, `input(`, `sys.argv`, form and query params) as well as other
+  external sources: cache stores (`redis`, `memcache`), raw network sockets
+  (`socket.`, `.recv(`), and message queues (`kafka`, `pika.`, `.consume(`).
+  Patterns are kept specific to avoid false matches on common internal calls.
 - **`has_dynamic_concat`** — captures whether a string is built dynamically
   (injection risk) versus a fixed literal.
 - **`secret_score`** — a gradual 0..1 score of how much the flagged value

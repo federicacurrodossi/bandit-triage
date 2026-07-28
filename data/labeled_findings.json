@@ -688,6 +688,138 @@
       "test_id": "B101",
       "test_name": "assert_used",
       "label": "true_positive"
+    },
+    {
+      "filename": "target_bandit/examples/dill.py",
+      "code": "5 pick = dill.dumps({'a': 'b', 'c': 'd'})\n6 print(dill.loads(pick))\n7 \n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 6,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_bandit/examples/jsonpickle.py",
+      "code": "5 \n6 print(jsonpickle.decode(pick))\n7 \n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 6,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_bandit/examples/pandas_read_pickle.py",
+      "code": "11 \n12 print(pd.read_pickle(pick))\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 12,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_bandit/examples/pickle_deserialize.py",
+      "code": "6 pick = pickle.dumps({'a': 'b', 'c': 'd'})\n7 print(pickle.loads(pick))\n8 \n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 7,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_bandit/examples/pickle_deserialize.py",
+      "code": "11 file_obj.seek(0)\n12 print(pickle.load(file_obj))\n13 \n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 12,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_bandit/examples/shelve_open.py",
+      "code": "7 \n8     with shelve.open(filename) as db:\n9         db['spam'] = {'eggs': 'ham'}\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 8,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "false_positive"
+    },
+    {
+      "filename": "constructed_examples/pickle_cache_consumer.py",
+      "code": "16     cached = redis_client.get(cache_key)    # bytes from an external store\n17     obj = pickle.loads(cached)              # RCE risk if cache is tampered\n18     return obj\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 17,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "true_positive"
+    },
+    {
+      "filename": "constructed_examples/pickle_web_endpoints.py",
+      "code": "24     raw_data = request.data                     # attacker controls the body\n25     obj = pickle.load(io.BytesIO(raw_data))     # RCE risk\n26     return str(obj)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 25,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "true_positive"
+    },
+    {
+      "filename": "constructed_examples/pickle_web_endpoints.py",
+      "code": "32     decoded = base64.b64decode(data)\n33     obj = pickle.loads(decoded)                 # RCE risk\n34     return f\"Loaded: {obj}\"\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 33,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "true_positive"
+    },
+    {
+      "filename": "constructed_examples/pickle_web_endpoints.py",
+      "code": "39     file = request.files[\"data_file\"]           # untrusted uploaded file\n40     obj = pickle.load(file)                      # RCE risk\n41     return \"restored\"\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 40,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "true_positive"
+    },
+    {
+      "filename": "constructed_examples/pickle_web_endpoints.py",
+      "code": "46     session_data = request.cookies.get(\"session\")   # untrusted cookie\n47     session = pickle.loads(base64.b64decode(session_data))  # RCE risk\n48     return session[\"username\"]\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 47,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "true_positive"
+    },
+    {
+      "filename": "constructed_examples/pickle_web_endpoints.py",
+      "code": "54     buffer = io.BytesIO(base64.b64decode(pickled))\n55     result = pickle.Unpickler(buffer).load()        # RCE risk\n56     return str(result)\n",
+      "issue_confidence": "HIGH",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
+      "line_number": 55,
+      "test_id": "B301",
+      "test_name": "blacklist",
+      "label": "true_positive"
     }
   ]
 }

@@ -20,7 +20,7 @@ Usage:
 The finding numbers match what `inspect_findings.py` prints (1-based, within
 that rule).
 
-Nothing is added until you confirm, and the dataset is backed up first.
+Nothing is added until you confirm.
 """
 import json
 import sys
