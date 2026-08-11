@@ -1,3 +1,4 @@
+bandit
 scikit-learn
 numpy
 flask

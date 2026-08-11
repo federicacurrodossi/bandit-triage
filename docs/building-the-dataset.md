@@ -1,201 +1,151 @@
 # Building the dataset from real Bandit findings
 
-This document describes the process used to grow the training dataset
-(`data/labeled_findings.json`) with **real** findings, instead of only the
-initial synthetic examples.
+How `data/labeled_findings.json` grows with real findings rather than only the
+synthetic examples it started from.
 
 ## The idea
 
-The model learns to imitate a human reviewer's judgment: given a Bandit
-finding, decide whether it's a real issue worth fixing (`true_positive`) or
-noise that can be safely ignored (`false_positive`). To learn that well, it
-needs realistic examples — so instead of inventing them, we take real
-findings produced by running Bandit on real open-source Python projects, and
-label them by hand.
+The model learns to imitate a reviewer's judgment: given a finding, is this
+worth fixing (`true_positive`) or noise that can be ignored
+(`false_positive`)? Learning that needs realistic material, so instead of
+inventing examples we run Bandit on real open source projects and label the
+output by hand.
 
-We use **Flask** (`github.com/pallets/flask`) as the first source of real
-code. It's a well-known, mature project, so its findings are realistic and
-mostly represent the "noise" case a reviewer meets in practice (asserts in
-tests, dummy passwords in examples, etc.) — good material for learning to
-tell signal from noise.
+## Sources
 
-### Sources used so far
+A useful dataset needs both sides of the judgment, and different repos supply
+different sides.
 
-Different sources contribute different kinds of examples, and a good dataset
-needs both:
+* **Flask** (`github.com/pallets/flask`) is mature and well reviewed, so nearly
+  everything it produces is a false positive: dummy passwords in tests,
+  `SECRET_KEY: None` defaults, placeholder values. A clean project has no real
+  secrets sitting in code. This is the noise side.
+* **Bandit's own `examples/`** (`github.com/PyCQA/bandit`) are files written
+  deliberately to trigger the rules, which makes them the most authoritative
+  true positives available. For B105 they contain realistic hardcoded secret
+  patterns that a clean project like Flask simply doesn't have.
+* **Intentionally-Vulnerable-Python-Application**
+  (`github.com/mukxl/Intentionally-Vulnerable-Python-Application`) is a
+  teaching repo whose `admin` / `password123` pair is a clear B105 true
+  positive: a stored authentication credential in application code, not test
+  code. It was still labeled by hand under the policy below, not assumed true
+  because the repo advertises itself as vulnerable.
+* **python-insecure-app** (`github.com/trottomv/python-insecure-app`) is a
+  deliberately vulnerable FastAPI app. It gave one true positive
+  (`SUPER_SECRET_TOKEN = "5u93R53Cr3tT0k3n"`, a realistic token in config) and
+  two false positives (`SUPER_SECRET_NAME = "John Ripper"`, a joke value, once
+  in config and once in a test). Good evidence that the variable name alone
+  doesn't settle the label; the value and the context do.
+* **Werkzeug** (`github.com/pallets/werkzeug`), the WSGI library Flask is built
+  on, supplies B101 true positives. Its `src/werkzeug/` uses `assert` for
+  internal invariants: type checks (`assert isinstance(env, dict)`),
+  preconditions (`assert self.map is not None`), call order guards. These are
+  real asserts in production code that disappear under `python -O`, which is
+  exactly what B101 warns about. Large mature frameworks are the natural home
+  for them, since small demo repos rarely assert outside tests.
 
-- **Flask** (`github.com/pallets/flask`) — a mature, well-reviewed project.
-  Its findings are almost entirely **false positives** (dummy passwords in
-  tests, `SECRET_KEY: None` defaults, placeholder values), because a clean
-  project has no real secrets committed to code. Good for the "noise" side.
-- **Bandit's own examples** (`github.com/PyCQA/bandit`, the `examples/`
-  folder) — files written deliberately to trigger Bandit's rules, so they
-  are the most authoritative source of **true positives**. For B105 they
-  contain realistic hardcoded-secret patterns that a clean project like Flask
-  simply doesn't have.
-- **Intentionally-Vulnerable-Python-Application**
-  (`github.com/mukxl/Intentionally-Vulnerable-Python-Application`) — a
-  deliberately vulnerable teaching repo. Its hardcoded `admin` /
-  `password123` credential is a clear B105 true positive: a stored
-  authentication credential in application (non-test) code. This is the kind
-  of realistic case clean projects don't contain. Used deliberately and
-  disclosed here as an intentionally vulnerable source; the finding was still
-  labeled by hand using the policy below, not assumed true just because the
-  repo is labeled "vulnerable".
-- **python-insecure-app** (`github.com/trottomv/python-insecure-app`) — a
-  deliberately vulnerable FastAPI app. It contributed a clear B105 true
-  positive (`SUPER_SECRET_TOKEN = "5u93R53Cr3tT0k3n"`, a realistic token in a
-  config file) plus two false positives (`SUPER_SECRET_NAME = "John Ripper"`,
-  a joke placeholder value — one in config, one in a test file). A good
-  illustration that the variable name alone ("SECRET") doesn't decide the
-  label; the value and context do.
-- **Werkzeug** (`github.com/pallets/werkzeug`) — the mature WSGI library that
-  Flask is built on. Used as a source of **B101 true positives**: its source
-  code (`src/werkzeug/`) uses `assert` for internal invariants — type checks
-  (`assert isinstance(env, dict)`), preconditions (`assert self.map is not
-  None, "rule not bound"`), and call-order guards (`assert status_set is not
-  None, "write() before start_response"`). These are real asserts in
-  production code that would vanish under `python -O`, which is exactly what
-  B101 warns about. Big, mature frameworks are the natural home for B101 true
-  positives, because small demo repos rarely use assert in non-test code.
+Two sources were tried and dropped. `flask_config_example` produced no B105
+findings at all, because it keeps secrets in a `config.json` and Bandit only
+reads `.py` files. Bandit's own `examples/assert.py` held nothing but
+`assert True`, technically flagged but uninstructive since it protects nothing,
+so Werkzeug's real asserts were used instead. Both are recorded here because
+knowing which sources come up empty, and why, is part of the process.
 
-Sources that were tried but did not contribute: **flask_config_example**
-(`github.com/MirelaI/flask_config_example`) was scanned but produced no B105
-findings, because it keeps its secrets in a `config.json` file rather than in
-Python code, and Bandit only analyzes `.py` files. Also, **Bandit's own
-`examples/assert.py`** was checked for B101 true positives but only contained
-`assert True` — a technically-flagged but uninstructive case (it protects
-nothing), so it was skipped in favor of the real Werkzeug source asserts.
-Both are recorded here for transparency — not every source yields usable
-findings, and knowing why is part of the process.
+Training on Flask alone would teach the model only what noise looks like.
+Pairing it with intentional examples gives it both sides, which is what it
+needs to tell them apart.
 
-This split matters: training only on Flask would teach the model only what
-noise looks like. Pairing it with Bandit's intentional examples and
-vulnerable teaching repos gives the model both sides — real issues and false
-alarms — which is what it needs to tell them apart.
+**On true positives:** examples taken from vulnerable or teaching repos are
+realistic but deliberately planted, and that's expected. A genuinely leaked
+production secret is rare and hard to come by, for good reason. What matters is
+that an example has the right shape: a realistic value, in production code,
+actually used to authenticate. This is stated openly rather than presented as
+scraped real world leaks.
 
-Note on true positives: examples from intentionally-vulnerable or
-example repositories are realistic but deliberately constructed (a password
-put there on purpose). That's fine and expected — a genuinely leaked
-production secret is rare and hard to find, for good reason. What matters is
-that the example has the right *shape* of a true positive: a realistic-looking
-value, in production (non-test) code, actually used to authenticate. This is
-disclosed openly rather than presented as scraped real-world leaks.
+## The process
 
-## Step-by-step process
-
-### 1. Get a real project to scan
+### 1. Clone a project to scan
 
 ```bash
 # a clean project (mostly false positives)
 git clone --depth 1 https://github.com/pallets/flask.git target_flask
 
-# Bandit's own intentional examples (a good source of true positives)
+# Bandit's intentional examples (a good source of true positives)
 git clone --depth 1 https://github.com/PyCQA/bandit.git target_bandit
 ```
 
-Remember to add the cloned folders and generated reports to `.gitignore`
-(`target_flask/`, `target_bandit/`, `real_findings.json`,
-`bandit_examples.json`, `findings_*.txt`) so they never get committed to your
-own repo.
+Add the cloned folders and generated reports to `.gitignore` so they never
+reach your own repo. The current `.gitignore` already covers `target_*/`,
+`findings_*.txt`, and the named report files.
 
-### 2. Run Bandit on it and save the JSON output
+### 2. Run Bandit and save the JSON
 
 ```bash
-# scan Flask
 bandit -r target_flask -f json -o real_findings.json
-
-# scan Bandit's examples folder (for true positives)
 bandit -r target_bandit/examples -f json -o bandit_examples.json
 ```
 
-This produces JSON reports: the raw findings, exactly as Bandit reports them.
-Note that Bandit findings do **not** contain a `label` field — Bandit flags
-patterns but never judges whether they're real problems in context. Adding
-that judgment is our job.
+These are raw findings, exactly as Bandit reports them. Note there is no
+`label` field: Bandit flags patterns but never judges whether they matter in
+context. Supplying that judgment is the whole job here.
 
-### 3. Inspect the findings one rule at a time
+### 3. Inspect one rule at a time
 
-Looking at all findings at once is overwhelming (Flask produces over a
-thousand, mostly low-severity). So we focus on one rule type at a time.
-
-First, see the summary of how many findings there are per rule:
+All findings at once is overwhelming, since Flask alone produces over a
+thousand. Start with the per rule summary, then open a single rule:
 
 ```bash
 python3 inspect_findings.py real_findings.json
-```
-
-Then look at the details of a single rule (e.g. B105, hardcoded passwords):
-
-```bash
 python3 inspect_findings.py real_findings.json B105
 ```
 
-This prints each finding and also writes a worksheet file
-(`findings_B105.txt`) with a `LABEL: ____` line under each finding to fill
-in by hand.
+The second command prints each finding and writes a worksheet
+(`findings_B105.txt`) with a `LABEL: ____` line under each one to fill in.
 
-### 4. Label each finding by hand
+### 4. Label by hand
 
-For each finding, decide `true_positive` or `false_positive` by asking three
-questions about the **context** (not just trusting Bandit's severity):
+For each finding, choose `true_positive` or `false_positive` by asking three
+questions about the context rather than trusting Bandit's severity:
 
-1. **Where is it?** A file under `tests/` or `examples/` leans toward
-   false positive.
+1. **Where is it?** A file under `tests/` or `examples/` leans false positive.
 2. **What is the value?** An obviously fake value (`"a"`, `"test"`,
-   `"changeme"`) leans false positive; a realistic secret (`"sk_live_..."`,
+   `"changeme"`) leans false positive; something realistic (`"sk_live_..."`,
    `"pr0d-p@ssw0rd"`) leans true positive.
-3. **What does the code do with it?** Filling in a test form is harmless;
-   authenticating to a real production database is serious.
+3. **What does the code do with it?** Filling a test form is harmless.
+   Authenticating to a production database is not.
 
-Important: Bandit's **severity is just one clue, not the answer**. Bandit can
-rate something HIGH that's actually a false positive (e.g. `shell=True` on a
-fixed, safe command), or LOW that's actually a true positive (e.g. a real
-production API key it underestimates). The label reflects the real
-context, decided by the reviewer.
+Severity is one clue, not the answer. Bandit rates plenty of things HIGH that
+are false positives, such as `shell=True` on a fixed command, and LOW on things
+that are real, such as a production API key it underestimates.
 
-### 5. Add the labeled findings to the dataset
+### 5. Add the labeled findings
 
-Use the `add_to_dataset.py` helper, which copies findings from a Bandit
-report straight into `data/labeled_findings.json` in the correct format
-(no editing JSON by hand). You give it the report, the rule, the label, and
-which finding numbers to add (the numbers match what `inspect_findings.py`
-prints):
+`add_to_dataset.py` copies findings straight from a report into the dataset in
+the right format, so no JSON editing by hand. Give it the report, the rule, the
+label, and the finding numbers that `inspect_findings.py` printed:
 
 ```bash
-# add B105 findings #1 and #3 as false positive
 python3 add_to_dataset.py insecure_app_findings.json B105 false_positive 1,3
-
-# add B105 finding #2 as true positive
 python3 add_to_dataset.py insecure_app_findings.json B105 true_positive 2
 ```
 
-It shows a preview, asks for confirmation, and backs up the dataset before
-writing. (You can still edit `data/labeled_findings.json` by hand instead —
-each entry is all the fields Bandit produced plus the hand-added `label`.)
+It previews, asks for confirmation, and backs up the dataset before writing.
 
-### 6. If it's a new rule type, register it
+### 6. Register a new rule type
 
-If you're adding a rule the model hasn't seen before, also add its ID to
-`KNOWN_TEST_IDS` in `bandit_triage/features.py`, so the model gets a feature
-for it.
+If the rule is new to the model, add its ID to `KNOWN_TEST_IDS` in
+`bandit_triage/features.py` so it gets a feature.
 
-### 7. Retrain and check the balance
-
-Run `dataset_stats.py`. It retrains the model on the updated dataset (saving
-`model.json`) and prints a per-rule report: how many true/false positive
-examples each rule has, the training-set accuracy, and a balance hint telling
-you which rules still need more examples.
+### 7. Retrain and check balance
 
 ```bash
 python3 dataset_stats.py
 ```
 
-Note: the accuracy shown is training-set accuracy — a diagnostic measured on
-the same data the model learned from, not a real evaluation. A real
-evaluation needs a separate held-out test set. Use the report to spot which
-rules are unbalanced or which the model struggles with, not to claim
-real-world accuracy.
+This retrains, saves `model.json`, and reports counts per rule plus a hint
+about which rules still need examples. The accuracy figure is measured on the
+same data the model trained on, so read it as a diagnostic. A real evaluation
+would need a separate test set.
 
 ## Worked example
 
@@ -209,155 +159,122 @@ code:
     13   response = client.post("/auth/register", data={"username": "a", "password": "a"})
 ```
 
-Reasoning: it's in a `tests/` file inside `examples/` (question 1 → test
-code), the password is `"a"`, an obviously fake single character (question 2
-→ fake value), and the code is just simulating a registration to test a
-redirect (question 3 → harmless). All three point the same way.
+It sits in a `tests/` file inside `examples/` (question 1), the password is a
+single character (question 2), and the code only simulates a registration to
+test a redirect (question 3). All three agree.
 
 **Label: `false_positive`.**
 
-## Constructed true-positive examples for B105
+## Constructed true positives for B105
 
-Real hardcoded secrets are rare in clean open-source projects, so the B105
-true-positive class was hard to fill from real repos alone (Flask had none,
-and the intentionally-vulnerable repos gave only a handful). To balance the
-class, a few true-positive examples were deliberately constructed — using
-**real, publicly documented secret formats**, not values invented at random,
-and not anyone's actual leaked secret. They live in
-`constructed_secrets_example.py`.
+Real hardcoded secrets are scarce in clean open source projects, so this class
+was hard to fill from real repos alone. To balance it, a few examples were
+constructed using publicly documented secret formats, never values invented at
+random and never anyone's actual leaked secret. They live in
+`constructed_examples/constructed_secrets_example.py`.
 
-Where the patterns come from (documented sources):
+Where the patterns come from:
 
-- **AWS secret access key** — the 40-character `[A-Za-z0-9/+=]{40}` format,
+* **AWS secret access key**, the 40 character `[A-Za-z0-9/+=]{40}` format,
   using AWS's own public example value `wJalrXUtnFEMI/...EXAMPLEKEY` (note the
-  literal word "EXAMPLE" in it). Sources: AWS Secrets Manager / CloudFormation
-  documentation, and the Cencori "Secrets Detection Patterns" list.
-- **JWT signing secret** — the `eyJhbGci...` base64 header shape that every
-  HS256 JWT starts with. Sources: Cencori pattern list; AWS Kendra "JWT with
-  a shared secret" documentation.
-- **MongoDB connection string** — `mongodb+srv://user:pass@cluster...` with an
-  embedded password. Source: Cencori pattern list
-  (`mongodb(\+srv)?://[^@\s]+@...`).
-- **Stripe API key** — the `sk_test_[0-9a-zA-Z]{24,}` format, using Stripe's
-  public documentation test key. Sources: Cencori pattern list; Stripe docs.
-- **SMTP password** — a generic high-complexity password (mixed case, digits,
-  symbols), matching the generic `(password|passwd|pwd)` pattern.
+  literal word EXAMPLE). From AWS Secrets Manager and CloudFormation docs, and
+  the Cencori secrets detection pattern list.
+* **JWT signing secret**, the `eyJhbGci...` base64 header shape every HS256 JWT
+  opens with. From the Cencori list and AWS Kendra docs.
+* **MongoDB connection string**, `mongodb+srv://user:pass@cluster...` with an
+  embedded password. From the Cencori list.
+* **Stripe API key**, the `sk_test_[0-9a-zA-Z]{24,}` format, using Stripe's
+  public documentation test key.
+* **SMTP password**, a generic complex password mixing case, digits, and
+  symbols, matching the generic `(password|passwd|pwd)` pattern.
 
-Why they're built this way (design rationale):
+Why they're built this way:
 
-- **Different *shapes* of secret** — a cloud key, a token, a connection
-  string, an API key, and a password. This teaches the model that a B105 true
-  positive comes in many forms, not just one, so it generalizes better than
-  it would from five near-identical passwords.
-- **All in production (non-test) files**, and all actually *used* — each
-  secret is passed to a function that consumes it (`boto3.Session`,
-  `jwt.encode`, `MongoClient`, `stripe.api_key`, `smtp.login`). So the
-  context clearly indicates a real, active credential, not a dead placeholder.
-- **Values use documented public example formats**, so they have the right
-  length and character variety of real secrets (and therefore score high on
-  the `secret_score` feature) without being anyone's actual leaked secret.
+* **Five different shapes**, a cloud key, a token, a connection string, an API
+  key, and a password. This teaches the model that a true positive comes in
+  many forms, so it generalizes better than it would from five nearly identical
+  passwords.
+* **All in production files and all actually used**, each passed to something
+  that consumes it (`boto3.Session`, `jwt.encode`, `MongoClient`,
+  `stripe.api_key`, `smtp.login`), so the context reads as a live credential
+  rather than a dead placeholder.
+* **Documented public example values**, giving them the length and character
+  variety of real secrets, so they score high on `secret_score` without being
+  anyone's real secret.
 
-A note on Bandit coverage: Bandit's B105 only fires when the flagged string is
-tied to a **name** containing `password`, `pass`, `passwd`, `pwd`, `secret`,
-`token`, or `secrete`. So of the five, Bandit flags `AWS_SECRET_ACCESS_KEY`,
-`JWT_SECRET`, and `SMTP_PASSWORD`, but **not** `STRIPE_API_KEY` or
-`DATABASE_URL` — even though those are just as real. That gap is intentional
-and useful: the two Bandit misses were added to the dataset by hand, so the
-triage model learns to recognize them by value and context. If Bandit's rule
-ever widens to catch them, the model is already prepared. This is a small
-demonstration that the triage layer can reason about secrets beyond Bandit's
-current pattern matching.
+One quirk worth knowing: B105 only fires when the string is tied to a name
+containing `password`, `pass`, `passwd`, `pwd`, `secret`, `token`, or
+`secrete`. So Bandit catches `AWS_SECRET_ACCESS_KEY`, `JWT_SECRET`, and
+`SMTP_PASSWORD`, but misses `STRIPE_API_KEY` and `DATABASE_URL` even though
+they're just as real. That gap is useful: both misses were added to the dataset
+by hand so the triage model learns to spot them by value and context. A small
+demonstration that the triage layer can reason past Bandit's pattern matching.
 
-This is disclosed openly: these are constructed examples with realistic
-shape, clearly marked as such — not scraped real-world leaks. Using public
-example values (like AWS's `...EXAMPLEKEY` and Stripe's documentation test
-key) is a deliberate choice so the dataset contains no genuine live secret.
+## Rule notes: B101 (assert_used)
 
-## Per-rule reasoning: B101 (assert_used)
+B101 flags every use of `assert`. It matters because asserts are stripped when
+Python compiles to optimized bytecode (`python -O`), so any check written as an
+assert silently vanishes in that mode. Bandit's advice is to raise a real error
+instead. B101 is always LOW severity and HIGH confidence: Bandit is certain
+it's an assert, it just can't know whether it matters.
 
-B101 flags every use of the `assert` keyword. The reason it matters: asserts
-are **stripped out** when Python is compiled to optimized bytecode
-(`python -O`), so any check written as an `assert` silently disappears in that
-mode. If an assert was enforcing something important, that protection is gone.
-Bandit's own advice is to raise a real error (`AssertionError` or a meaningful
-exception) instead. B101 is always severity LOW, confidence HIGH — Bandit is
-sure it's an assert; it just can't know whether it matters in context.
+The signal here is almost the mirror of B105's, and it turns on location:
 
-The key labeling signal for B101 is almost the mirror image of B105's, and it
-turns on **where the assert is**:
+* **Assert in a test file** is a `false_positive`. Using `assert` in unit tests
+  is the normal way to check results, and Bandit's own config suggests skipping
+  the rule there. The `is_test_file` feature captures this directly.
+* **Assert in application code** is a `true_positive`. It could vanish under
+  `python -O`, so by the rule it should be a real error.
 
-- **assert in a test file** → `false_positive`. Using `assert` in unit tests
-  is the normal, expected way to check results (`assert result == expected`).
-  Bandit itself documents skipping this rule in tests (its `assert_used`
-  config suggests skipping `*_test.py` / `*test_*.py`). The `is_test_file`
-  feature captures this directly, so the model handles it well.
-- **assert in production / application code** → `true_positive`. Here the
-  assert could vanish under `python -O`, so per the rule it should be replaced
-  with a real error. We label these true positive consistently, on principle.
+Scanning all of Flask produced **1053** B101 findings, of which **1049** were
+in test files and only **4** in `src/flask/` (`assert view_func is not None` in
+`scaffold.py`, `assert meth is not None` in `views.py`). That lopsided split is
+itself the lesson: for B101 real issues are rare and the "where" question does
+almost all the work.
 
-A worked illustration from Flask: scanning the whole project produced **1053**
-B101 findings, but **1049** of them were in test files (legitimate test
-asserts → false positive) and only **4** were in the actual source under
-`src/flask/` (e.g. `assert view_func is not None` in `scaffold.py`,
-`assert meth is not None` in `views.py`). Those 4 are the interesting
-true-positive candidates. This lopsided split (1049 vs 4) is itself the
-lesson: for B101, real issues are rare and the "where" question does almost
-all the work.
+An honest caveat: those 4 are true positives by the rule, but in practice they
+guard developer side invariants rather than security critical protections. A
+strict reviewer labels them true positive on principle; a pragmatic one might
+call them low risk defensive checks. We label them `true_positive` for a
+consistent policy, but the ambiguity is kept deliberately, because grey cases
+like these are what make triage a judgment rather than a lookup.
 
-An honest note on the borderline: the 4 source asserts in Flask are true
-positives *by the rule* (asserts in production code, removable under `-O`),
-but in practice they guard developer-side invariants (type checks, internal
-preconditions) rather than security-critical protections. A strict reviewer
-labels them true positive on principle; a pragmatic one might see them as
-low-risk defensive checks. We label them `true_positive` for a consistent,
-defensible policy — but the ambiguity is deliberately kept, because these grey
-cases are exactly what makes triage a non-trivial judgment rather than a
-lookup.
-## Per-rule reasoning: B301 (pickle)
+## Rule notes: B301 (pickle)
 
-B301 flags use of Python's `pickle` module (and wrappers around it: `dill`,
-`cPickle`, `jsonpickle`, `pandas.read_pickle`, `shelve`) to **deserialize**
-data. The reason it matters: unpickling runs arbitrary code embedded in the
-byte stream, so `pickle.load()` / `pickle.loads()` on data an attacker
-controls is a remote-code-execution risk. This is the same vulnerability
-class (CWE-502, insecure deserialization) as the `torch.load()` check (B614)
-elsewhere in this dataset. B301 is always severity MEDIUM, confidence HIGH —
-Bandit is sure it's a pickle call; it can't know where the data came from.
+B301 flags use of `pickle` and its wrappers (`dill`, `cPickle`, `jsonpickle`,
+`pandas.read_pickle`, `shelve`) to deserialize data. Unpickling executes
+arbitrary code embedded in the byte stream, so `pickle.load()` on data an
+attacker controls is remote code execution. Same vulnerability class (CWE-502)
+as the `torch.load()` check in B614. Always MEDIUM severity, HIGH confidence:
+Bandit is sure it's a pickle call but can't see where the data came from.
 
-The key labeling signal for B301 is **where the deserialized data comes
-from** — trusted (the program's own data) vs. untrusted (anything an attacker
-could influence):
+The signal is the origin of the data:
 
-- **untrusted source** → `true_positive`. The pickle stream comes from
-  outside the program's control: an HTTP request body, an uploaded file, a
-  cookie, a network socket, a message queue, a cache like Redis. Here the RCE
-  risk is real. This is exactly what the `has_tainted_input` feature is meant
-  to catch (`request.`, `sys.argv`, uploaded files, etc.).
-- **trusted source** → `false_positive`. The pickle stream is data the program
-  itself produced and controls: a value pickled and unpickled in the same
-  scope, an internal cache file the app wrote, a fixed local artifact. The
-  `pickle` pattern is present, but there is no untrusted input, so the finding
-  is noise.
+* **Untrusted source** is a `true_positive`. The stream comes from outside the
+  program's control: a request body, an uploaded file, a cookie, a socket, a
+  message queue, a Redis cache. The risk is real, and this is what
+  `has_tainted_input` exists to catch.
+* **Trusted source** is a `false_positive`. The stream is data the program
+  produced itself: a value pickled and unpickled in one scope, an internal
+  cache file, a fixed local artifact. The pattern is present but there's no
+  untrusted input.
 
-A worked illustration from Bandit's own `examples/` directory: scanning it
-produced 13 B301 findings across several libraries (`pickle`, `dill`,
-`jsonpickle`, `pandas`, `shelve`). Reading the surrounding code, **every one
-of them deserializes trusted, self-generated data** — for instance
-`pickle_deserialize.py` does `pickle.dump([1, 2, '3'], file_obj)` into an
-in-memory `io.BytesIO()` buffer and then `pickle.load(file_obj)` a few lines
-later. Even the cases that "read from a file object" are reading a buffer the
-same script just wrote, not an external file. These examples exist to check
-that Bandit *detects the pattern*, not to represent real attacks — so they are
-all effectively false positives.
+Scanning Bandit's `examples/` produced 13 B301 findings across `pickle`,
+`dill`, `jsonpickle`, `pandas`, and `shelve`. Reading the surrounding code,
+every one deserializes trusted data it generated itself. `pickle_deserialize.py`
+dumps `[1, 2, '3']` into an in memory `io.BytesIO()` buffer and loads it back a
+few lines later. Even the cases that appear to read from a file object are
+reading a buffer the same script just wrote. They exist to check that Bandit
+detects the pattern, not to represent attacks, so they're all false positives.
 
 The label depends on context the flagged line doesn't show:
-`pickle.load(file_obj)` looks the same whether `file_obj` is a trusted buffer
-or an attacker's upload. You have to read where the data comes from.
+`pickle.load(file_obj)` looks identical whether `file_obj` is a trusted buffer
+or an attacker's upload. You have to trace where the data came from.
 
-A consequence for dataset construction: real-world open-source projects (and
-Bandit's own examples) are a good source of B301 *false* positives, but genuine *true* positives (pickle on untrusted input) are rarer in scanned code, because deserializing untrusted
-data is a known-dangerous pattern that careful projects avoid. To represent
-the true-positive side, we add constructed examples based on documented unsafe
-patterns (e.g. `pickle.loads(request.data)`, `pickle.load(uploaded_file)`,
-`pickle.loads(base64.b64decode(cookie))`), the same way the B105 true
-positives were supplemented.
+A consequence for dataset building: real projects are a good source of B301
+false positives, but genuine true positives are rare in scanned code, precisely
+because deserializing untrusted data is a well known hazard that careful
+projects avoid. The true positive side is therefore filled with constructed
+examples based on documented unsafe patterns (`pickle.loads(request.data)`,
+`pickle.load(uploaded_file)`, `pickle.loads(base64.b64decode(cookie))`), the
+same approach used for B105.
