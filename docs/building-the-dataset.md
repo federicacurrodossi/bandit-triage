@@ -129,7 +129,7 @@ python3 add_to_dataset.py insecure_app_findings.json B105 false_positive 1,3
 python3 add_to_dataset.py insecure_app_findings.json B105 true_positive 2
 ```
 
-It previews, asks for confirmation, and backs up the dataset before writing.
+It previews the findings and asks for confirmation before writing.
 
 ### 6. Register a new rule type
 
@@ -278,3 +278,48 @@ projects avoid. The true positive side is therefore filled with constructed
 examples based on documented unsafe patterns (`pickle.loads(request.data)`,
 `pickle.load(uploaded_file)`, `pickle.loads(base64.b64decode(cookie))`), the
 same approach used for B105.
+
+## Rule notes: B608 (hardcoded_sql_expressions)
+
+B608 flags SQL queries built by string operations (`%`, `+`, `.format()`,
+f-strings, `.replace()`), the classic path to SQL injection (CWE-89). Unlike
+the earlier rules, confidence carries information here: a bare suspicious
+string is LOW, but a string passed to a DBAPI `execute` call is raised to
+MEDIUM, since it is more clearly a real query being run.
+
+The signal is the origin of the value pasted into the query:
+
+* **Untrusted input concatenated into the query** is a `true_positive`. A
+  request parameter or other outside value is pasted into the SQL text. This is
+  `has_dynamic_concat` (the string is built, not a literal) and
+  `has_tainted_input` (the value is untrusted) firing together.
+* **Fully internal queries** are a `false_positive`. The query is built with a
+  dynamic form Bandit flags, but every interpolated piece is a fixed internal
+  value (a hardcoded table name, an internal constant, a value already coerced
+  to `int`), so nothing an attacker controls reaches the query. Calling this
+  noise is what the triage layer adds.
+
+The line between the two is the origin of the interpolated value, not the form:
+
+```python
+name = request.args["name"]
+cursor.execute(f"SELECT * FROM users WHERE name = '{name}'")   # true positive
+cursor.execute(f"SELECT * FROM {TABLE_NAME} ORDER BY id")      # false positive
+```
+
+Both are f-strings that Bandit flags identically. The first pastes in an
+untrusted request value; the second only interpolates an internal constant. You
+can't judge B608 from the flagged line alone.
+
+Both sides of this rule are constructed, for different reasons. Bandit's
+`examples/` directory is the richest single source for B608 (49 findings), but
+every one interpolates an abstract `identifier` whose origin is never shown, so
+the form is all Bandit already detects and there are no false positives among
+them. So the true positive side is built with real context, the interpolated
+value coming visibly from `request` (query params, form fields, a JSON body, a
+cookie, a path parameter), across all the flagged forms. The false positive
+side is built too, and here a detail surfaced: properly parameterized queries
+(`execute("... = ?", (val,))`) are not flagged by Bandit at all, because
+nothing is concatenated, so they can't serve as findings. The false positives
+therefore use the one shape that is flagged yet safe: a dynamic query whose
+interpolated pieces are all internal constants.

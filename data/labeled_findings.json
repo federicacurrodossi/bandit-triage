@@ -144,51 +144,7 @@
       "test_name": "pickle",
       "label": "false_positive"
     },
-    {
-      "filename": "app/db/queries.py",
-      "code": "70    query = \"SELECT * FROM users WHERE id = \" + user_id\n71    cursor.execute(query)\n",
-      "issue_confidence": "MEDIUM",
-      "issue_severity": "MEDIUM",
-      "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 70,
-      "test_id": "B608",
-      "test_name": "hardcoded_sql_expressions",
-      "issue_cwe": {
-        "id": 89,
-        "link": "https://cwe.mitre.org/data/definitions/89.html"
-      },
-      "label": "true_positive"
-    },
-    {
-      "filename": "app/db/queries.py",
-      "code": "80    query = \"SELECT COUNT(*) FROM users\"\n81    cursor.execute(query)\n",
-      "issue_confidence": "MEDIUM",
-      "issue_severity": "MEDIUM",
-      "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 80,
-      "test_id": "B608",
-      "test_name": "hardcoded_sql_expressions",
-      "issue_cwe": {
-        "id": 89,
-        "link": "https://cwe.mitre.org/data/definitions/89.html"
-      },
-      "label": "false_positive"
-    },
-    {
-      "filename": "tests/fixtures/db_fixtures.py",
-      "code": "5     query = \"SELECT * FROM users WHERE id = \" + str(TEST_USER_ID)\n6     cursor.execute(query)\n",
-      "issue_confidence": "MEDIUM",
-      "issue_severity": "MEDIUM",
-      "issue_text": "Possible SQL injection vector through string-based query construction.",
-      "line_number": 5,
-      "test_id": "B608",
-      "test_name": "hardcoded_sql_expressions",
-      "issue_cwe": {
-        "id": 89,
-        "link": "https://cwe.mitre.org/data/definitions/89.html"
-      },
-      "label": "false_positive"
-    },
+
     {
       "filename": "app/ml/inference.py",
       "code": "14    uploaded_file = request.files[\"model\"]\n15    model = torch.load(uploaded_file, weights_only=False)\n",
@@ -820,6 +776,259 @@
       "test_id": "B301",
       "test_name": "blacklist",
       "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "31     term = request.args[\"q\"]                       # untrusted\n32     query = \"SELECT * FROM products WHERE name = '%s'\" % term\n33     cur.execute(query)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 32,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "42     user_id = request.args[\"id\"]                   # untrusted\n43     query = \"SELECT * FROM users WHERE id = '\" + user_id + \"'\"\n44     cur.execute(query)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 43,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "53     order_id = request.args[\"order_id\"]            # untrusted\n54     query = \"SELECT * FROM orders WHERE id = '{}'\".format(order_id)\n55     cur.execute(query)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 54,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "64     username = request.form[\"username\"]            # untrusted\n65     cur.execute(f\"SELECT * FROM users WHERE username = '{username}'\")\n66     return str(cur.fetchone())\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 65,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "74     email = request.args[\"email\"]                  # untrusted\n75     query = \"SELECT * FROM users WHERE email = '[VALUE]'\".replace(\"[VALUE]\", email)\n76     cur.execute(query)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 75,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "86     # parameterization can't protect a table name, so this is genuinely unsafe\n87     cur.execute(f\"SELECT COUNT(*) FROM {table}\")\n88     return str(cur.fetchone())\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 87,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "94     column = request.args[\"sort\"]                  # untrusted identifier\n95     cur.execute(f\"SELECT * FROM users ORDER BY {column}\")\n96     return str(cur.fetchall())\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 95,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "105     high = request.args[\"high\"]                    # untrusted\n106     query = \"SELECT * FROM events WHERE ts > '%s' AND ts < '%s'\" % (low, high)\n107     cur.execute(query)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 106,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "117     name = raw.strip()                             # still untrusted after strip()\n118     query = \"SELECT * FROM profiles WHERE name = '\" + name + \"'\"\n119     cur.execute(query)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 118,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "128     item = request.get_json()[\"item_id\"]           # untrusted\n129     cur.execute(f\"DELETE FROM items WHERE id = {item}\")\n130     conn.commit()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 129,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "139     cat = request.args[\"cat\"]                      # untrusted\n140     sql = \"SELECT * FROM products WHERE category = '%s'\" % cat\n141     cur.execute(sql)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 140,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "150     # tag_name comes from the URL path, still untrusted\n151     query = \"SELECT * FROM posts WHERE tag = '{}'\".format(tag_name)\n152     cur.execute(query)\n",
+      "issue_confidence": "LOW",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 151,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_injection_examples.py",
+      "code": "161     sid = request.cookies.get(\"session_id\")        # untrusted\n162     cur.execute(f\"SELECT user_id FROM sessions WHERE sid = '{sid}'\")\n163     return str(cur.fetchone())\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 162,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "93     # built with an internal constant, never from request data\n94     cursor.execute(f\"SELECT * FROM {TABLE_NAME} ORDER BY id\")\n95     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 94,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "103         sort_key = \"id\"\n104     cursor.execute(f\"SELECT * FROM users ORDER BY {sort_key}\")\n105     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 104,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "129     cols = \", \".join(COLUMNS)\n130     cursor.execute(f\"SELECT {cols} FROM users\")\n131     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 130,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "136     # schema name is a fixed internal constant\n137     cursor.execute(f\"SELECT * FROM {SCHEMA}.users WHERE active = 1\")\n138     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 137,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "143     # + concatenation, but only of internal constants\n144     cursor.execute(\"SELECT * FROM \" + TABLE_NAME + \" WHERE deleted = 0\")\n145     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 144,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "151     table = STATUS_TABLES.get(status, \"open_tickets\")\n152     cursor.execute(f\"SELECT COUNT(*) FROM {table}\")\n153     return cursor.fetchone()[0]\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 152,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "159     n = int(limit)\n160     cursor.execute(f\"SELECT * FROM users ORDER BY id LIMIT {n}\")\n161     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 160,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "167     idx = int(month_index) % 12\n168     cursor.execute(f\"SELECT * FROM stats_{idx}\")\n169     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 168,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "174     # both table names are internal constants\n175     cursor.execute(f\"SELECT * FROM {TABLE_NAME} JOIN {SCHEMA}.roles USING (role_id)\")\n176     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 175,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "filename": "./constructed_examples/sql_safe_queries.py",
+      "code": "181     # .format() with a fixed internal column list\n182     cursor.execute(\"SELECT {} FROM users\".format(\", \".join(COLUMNS)))\n183     return cursor.fetchall()\n",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 182,
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
     }
   ]
 }
