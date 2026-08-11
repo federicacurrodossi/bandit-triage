@@ -31,7 +31,7 @@ constructed_examples/
 # Backups
 *.bak
 
-# NOTE: intentionally NOT ignored (these are committed on purpose):
-#   data/labeled_findings.json     -> the training dataset
-#   dataset_stats.md               -> living documentation of dataset state
-#   misclassified.md               -> living documentation of hard cases
+
+target_django/
+django_findings.json
+django_findings/

@@ -1,0 +1,491 @@
+{
+  "errors": [],
+  "generated_at": "2026-08-11T00:00:00Z",
+  "metrics": {
+    "_totals": {
+      "loc": 0
+    }
+  },
+  "results": [
+    {
+      "filename": "target_django/django/contrib/auth/hashers.py",
+      "line_number": 339,
+      "code": "339         assert algorithm == self.algorithm",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/contrib/staticfiles/storage.py",
+      "line_number": 307,
+      "code": "307         assert url_path.startswith(settings.STATIC_URL)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/core/handlers/asgi.py",
+      "line_number": 226,
+      "code": "226         assert False, \"Invalid ASGI message after request body\"",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/core/mail/handler.py",
+      "line_number": 67,
+      "code": "67         assert alias == DEFAULT_MAILER_ALIAS",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/migrations/autodetector.py",
+      "line_number": 864,
+      "code": "864         assert model_state.options.get(\"proxy\")",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/migrations/graph.py",
+      "line_number": 92,
+      "code": "92         assert key not in self.node_map",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/migrations/state.py",
+      "line_number": 108,
+      "code": "108         assert isinstance(real_apps, set)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/models/base.py",
+      "line_number": 975,
+      "code": "975         assert not (force_insert and (force_update or update_fields))",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/models/expressions.py",
+      "line_number": 213,
+      "code": "213         assert not exprs",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/models/fields/__init__.py",
+      "line_number": 1445,
+      "code": "1445         assert isinstance(value, datetime.date)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/models/query.py",
+      "line_number": 913,
+      "code": "913         assert len(returned_columns) == len(objs_without_pk)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/db/models/sql/query.py",
+      "line_number": 956,
+      "code": "956         assert self.alias_map[alias].join_type is not None",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/http/multipartparser.py",
+      "line_number": 461,
+      "code": "461         assert remaining > 0, \"remaining bytes to read should not be negative\"",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/middleware/csrf.py",
+      "line_number": 156,
+      "code": "156         assert len(request_csrf_token) == CSRF_SECRET_LENGTH",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/template/base.py",
+      "line_number": 463,
+      "code": "463         assert token_start == COMMENT_TAG_START",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/test/client.py",
+      "line_number": 92,
+      "code": "92         assert isinstance(data, dict)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/test/client.py",
+      "line_number": 105,
+      "code": "105         assert isinstance(extra, dict)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/test/runner.py",
+      "line_number": 998,
+      "code": "998         assert tests is None",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/test/utils.py",
+      "line_number": 577,
+      "code": "577         assert not kwargs",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/django/test/utils.py",
+      "line_number": 580,
+      "code": "580         assert not args",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "true_positive"
+    },
+    {
+      "filename": "target_django/tests/auth_tests/test_management.py",
+      "line_number": 68,
+      "code": "68         assert \"__proxy__\" not in prompt",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/auth_tests/urls.py",
+      "line_number": 24,
+      "code": "24         assert isinstance(request, HttpRequest)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/builtin_server/tests.py",
+      "line_number": 24,
+      "code": "24         assert isinstance(data, bytes)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/generic_views/test_base.py",
+      "line_number": 267,
+      "code": "267         assert hasattr(self, \"attr\")",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/handlers/tests_custom_error_handlers.py",
+      "line_number": 15,
+      "code": "15         assert response.content",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/inline_formsets/tests.py",
+      "line_number": 221,
+      "code": "221         assert \"poet\" in self._meta.fields",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/mail/tests.py",
+      "line_number": 100,
+      "code": "100         assert len(message.get_all(header)) == 1",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/model_formsets/models.py",
+      "line_number": 34,
+      "code": "34         assert self.author.name is not None",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/raw_query/models.py",
+      "line_number": 15,
+      "code": "15         assert k in [f.attname for f in self._meta.fields]",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/select_related/tests.py",
+      "line_number": 33,
+      "code": "33         assert len(names) == len(models)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/tasks/tasks.py",
+      "line_number": 77,
+      "code": "77         assert isinstance(context, TaskContext)",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    },
+    {
+      "filename": "target_django/tests/utils_tests/test_http.py",
+      "line_number": 612,
+      "code": "612         assert len(line) == line_length",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "test_id": "B101",
+      "test_name": "assert_used",
+      "issue_cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      },
+      "label": "false_positive"
+    }
+  ]
+}
