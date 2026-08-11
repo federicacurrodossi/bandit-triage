@@ -59,22 +59,68 @@ policy used for the training data, and crucially **before** running the model.
 Labeling after seeing the model's predictions would contaminate the test: the
 point is an independent judgment to compare against.
 
-The labeled sample is saved as a Bandit report where each finding carries an
-added `label` field, under `heldout/` (for example `heldout/heldout_b101.json`).
-Unlike the raw scans, this file is committed: it is hand-made test data, the
-same kind of artifact as `data/labeled_findings.json`.
+Labels are recorded in a small **spec file**: one finding per line, as
+`<label> <path-substring>:<line>`. The path only has to be a unique substring
+of the finding's filename, so the full path is not needed. Lines starting with
+`#` are comments. For example:
 
-### 4. Evaluate
-
-```bash
-python3 evaluate_heldout.py heldout/heldout_b101.json
+```
+false_positive core/cache/backends/db.py:136
+true_positive  main.py:25
 ```
 
-This loads the trained model, predicts each held-out finding, compares against
-the hand label, and writes `heldout_stats.md` with accuracy, precision,
-recall, F1, a confusion matrix, and a per-rule breakdown that lists every
-misclassified finding with the feature that drove the model's decision. The
-report is organized by rule, so adding more rules later slots in cleanly.
+### 4. Build the held-out file from real findings
+
+Each rule keeps **one spec file** (for example `b608_spec.txt`), and it holds
+every case for that rule regardless of which project it came from. When new
+cases turn up in another project, you add their lines to the same spec; you do
+not start a second spec.
+
+`build_heldout.py` takes that one spec, plus **all** the Bandit reports the
+findings live in, searches every report to find each finding by path and line,
+copies it verbatim (real code, confidence, line numbers, not retyped), attaches
+the hand label, and writes the held-out file:
+
+```bash
+python3 build_heldout.py b608_spec.txt heldout/heldout_b608.json \
+    django_findings/B608.json hackable_findings.json
+```
+
+The argument order is: spec, then output, then one or more reports. Because the
+script pools all the reports together, a spec line is matched wherever its
+finding actually is (the Django cases resolve against `django_findings/B608.json`,
+the hackable cases against `hackable_findings.json`). Adding a third project
+later means adding its lines to the spec and its report to the command, nothing
+else.
+
+Held-out files are grouped **one per rule** (`heldout/heldout_b101.json`,
+`heldout/heldout_b608.json`). Unlike the raw scans, the spec and the held-out
+file are committed: they are hand-made test data, the same kind of artifact as
+`data/labeled_findings.json`.
+
+A note on why several sources are needed. A clean framework like Django gives
+plenty of *false* positives for a rule (its ORM builds SQL from internal
+identifiers, which Bandit flags but which are safe), but no *true* positives,
+because a mature project has no real SQL injection. The true positives come
+from deliberately vulnerable teaching apps (for B608, a small Flask app whose
+login and search endpoints paste `request` data straight into the query). One
+rule's held-out set therefore mixes both: safe-but-flagged queries from real
+code, and genuine injections from vulnerable apps.
+
+### 5. Evaluate the whole folder at once
+
+```bash
+python3 evaluate_heldout.py heldout/
+```
+
+Pointing the evaluator at the `heldout/` folder runs **every** rule file in it
+in one go, so a change that fixes one rule but quietly breaks another is caught
+immediately (regression testing). It loads the trained model, predicts each
+finding, compares against the hand label, and writes `heldout_stats.md` with
+accuracy, precision, recall, F1, a confusion matrix, and a per-rule breakdown
+that lists every misclassified finding with the feature that drove the model's
+decision. Adding a new rule file to the folder needs no change here: it is
+picked up automatically on the next run.
 
 ## What the numbers mean
 
@@ -117,9 +163,17 @@ that a black-box classifier would not.
 
 ## Extending the evaluation
 
-The same process applies to the other rules. Each new held-out set is a Bandit
-report with hand-added labels under `heldout/`, and `evaluate_heldout.py`
-already breaks results down per rule, so several rules can share one held-out
-file or live in separate ones. Growing the held-out set to 30 to 50 findings
-per rule makes the per-rule numbers steadier, since with a small sample a
-single case moves the accuracy by several points.
+Adding a rule to the evaluation is the same five steps: scan a project, split
+by rule, label a spec, build the rule's held-out file from the spec and the
+reports, and re-run `evaluate_heldout.py heldout/`. Adding a *new source* to a
+rule already covered is smaller still: add the new cases to that rule's
+existing spec, add the new report to the build command, and rebuild. Because
+each rule lives in its own file and the evaluator reads the whole folder, rules
+accumulate independently and the regression test always covers all of them at
+once.
+
+Growing each rule's held-out set to 30 to 50 findings makes its numbers
+steadier, since with a small sample a single case moves the accuracy by several
+points. Pulling those cases from more than one project also makes the estimate
+more honest: it shows the model generalizing across codebases, not just fitting
+the quirks of one.

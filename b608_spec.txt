@@ -1,0 +1,41 @@
+# Held-out B608 spec. One line per finding: <label> <path-substring>:<line>
+# Fed to build_heldout.py together with the Bandit reports the findings live in
+# (django_findings/B608.json for the Django cases, hackable_findings.json for
+# the hackable ones).
+
+# === Django (target_django) : all false positives ===
+# ORM/backend queries built from internal identifiers (table/column names,
+# quote_name); no request input reaches the query.
+
+# --- source (django/) ---
+false_positive core/cache/backends/db.py:136
+false_positive core/cache/backends/db.py:233
+false_positive core/cache/backends/db.py:254
+false_positive core/cache/backends/db.py:302
+false_positive db/backends/base/operations.py:113
+false_positive db/backends/mysql/base.py:340
+false_positive db/backends/mysql/introspection.py:160
+false_positive db/backends/mysql/schema.py:94
+false_positive db/backends/oracle/base.py:338
+false_positive db/backends/oracle/introspection.py:179
+false_positive db/backends/oracle/operations.py:73
+false_positive postgis/operations.py:212
+false_positive db/backends/sqlite3/schema.py:257
+
+# --- test (tests/) ---
+false_positive backends/base/test_base.py:162
+false_positive backends/tests.py:178
+false_positive backends/tests.py:158
+false_positive raw_query/tests.py:204
+false_positive select_for_update/tests.py:68
+false_positive gis_tests/geoapp/tests.py:217
+false_positive schema/tests.py:262
+
+# === hackable (target_hackable) : real SQL injection app ===
+# TRUE: user input from request pasted straight into the query
+true_positive main.py:25
+true_positive main.py:56
+# FALSE: hardcoded seed values (hash of a literal string), no user input
+false_positive main.py:89
+false_positive main.py:90
+false_positive main.py:91

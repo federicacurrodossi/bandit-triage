@@ -31,7 +31,18 @@ constructed_examples/
 # Backups
 *.bak
 
-
+# Held-out evaluation: cloned projects and raw/split scans (all regenerated)
 target_django/
+target_hackable/
 django_findings.json
 django_findings/
+hackable_findings.json
+
+# Editor/local
+.claude/
+
+# NOTE: intentionally NOT ignored (committed on purpose):
+#   data/labeled_findings.json   -> training dataset
+#   heldout/heldout_*.json       -> hand-labeled held-out test sets
+#   b608_spec.txt                -> spec that rebuilds the B608 held-out
+#   dataset_stats.md, misclassified.md, heldout_stats.md -> living reports

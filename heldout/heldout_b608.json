@@ -1,0 +1,582 @@
+{
+  "errors": [],
+  "generated_at": "",
+  "metrics": {},
+  "results": [
+    {
+      "code": "135             if self._cull_probability and random.random() <= self._cull_probability:\n136                 cursor.execute(\"SELECT COUNT(*) FROM %s\" % table)\n137                 num = cursor.fetchone()[0]\n",
+      "col_offset": 31,
+      "end_col_offset": 56,
+      "filename": "target_django/django/core/cache/backends/db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 136,
+      "line_range": [
+        136
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "232             cursor.execute(\n233                 \"DELETE FROM %s WHERE %s IN (%s)\"\n234                 % (\n235                     table,\n236                     quote_name(\"cache_key\"),\n237                     \", \".join([\"%s\"] * len(keys)),\n238                 ),\n239                 keys,\n",
+      "col_offset": 16,
+      "end_col_offset": 49,
+      "filename": "target_django/django/core/cache/backends/db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 233,
+      "line_range": [
+        233,
+        234,
+        235,
+        236,
+        237,
+        238
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "253             cursor.execute(\n254                 \"SELECT %s FROM %s WHERE %s = %%s and %s > %%s\"\n255                 % (\n256                     quote_name(\"cache_key\"),\n257                     quote_name(self._table),\n258                     quote_name(\"cache_key\"),\n259                     quote_name(\"expires\"),\n260                 ),\n261                 [key, connection.ops.adapt_datetimefield_value(now)],\n",
+      "col_offset": 16,
+      "end_col_offset": 63,
+      "filename": "target_django/django/core/cache/backends/db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 254,
+      "line_range": [
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "301         with connection.cursor() as cursor:\n302             cursor.execute(\"DELETE FROM %s\" % table)\n",
+      "col_offset": 27,
+      "end_col_offset": 43,
+      "filename": "target_django/django/core/cache/backends/db.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 302,
+      "line_range": [
+        302
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "112         cache_key = self.quote_name(\"cache_key\")\n113         return f\"SELECT {cache_key} FROM %s ORDER BY {cache_key} LIMIT 1 OFFSET %%s\"\n114 \n",
+      "col_offset": 17,
+      "end_col_offset": 24,
+      "filename": "target_django/django/db/backends/base/operations.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 113,
+      "line_range": [
+        113
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "339                     cursor.execute(\n340                         \"\"\"\n341                         SELECT REFERRING.`%s`, REFERRING.`%s` FROM `%s` as REFERRING\n342                         LEFT JOIN `%s` as REFERRED\n343                         ON (REFERRING.`%s` = REFERRED.`%s`)\n344                         WHERE REFERRING.`%s` IS NOT NULL AND REFERRED.`%s` IS NULL\n345                         \"\"\"\n346                         % (\n347                             primary_key_column_name,\n348                             column_name,\n349                             table_name,\n350                             referenced_table_name,\n351                             column_name,\n352                             referenced_column_name,\n353                             column_name,\n354                             referenced_column_name,\n355                         )\n356                     )\n",
+      "col_offset": 24,
+      "end_col_offset": 27,
+      "filename": "target_django/django/db/backends/mysql/base.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 340,
+      "line_range": [
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "159         cursor.execute(\n160             \"SELECT * FROM %s LIMIT 1\" % self.connection.ops.quote_name(table_name)\n161         )\n",
+      "col_offset": 12,
+      "end_col_offset": 38,
+      "filename": "target_django/django/db/backends/mysql/introspection.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 160,
+      "line_range": [
+        160
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "93             self.execute(\n94                 \"UPDATE %(table)s SET %(column)s = %%s\"\n95                 % {\n96                     \"table\": self.quote_name(model._meta.db_table),\n97                     \"column\": self.quote_name(field.column),\n98                 },\n99                 [effective_default],\n",
+      "col_offset": 16,
+      "end_col_offset": 55,
+      "filename": "target_django/django/db/backends/mysql/schema.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 94,
+      "line_range": [
+        94,
+        95,
+        96,
+        97,
+        98
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "337                 cursor.execute(\n338                     \"SELECT 1 FROM DUAL WHERE DUMMY %s\"\n339                     % self._standard_operators[\"contains\"],\n340                     [\"X\"],\n",
+      "col_offset": 20,
+      "end_col_offset": 55,
+      "filename": "target_django/django/db/backends/oracle/base.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 338,
+      "line_range": [
+        338,
+        339
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "178         cursor.execute(\n179             \"SELECT * FROM {} WHERE ROWNUM < 2 AND {} > 0\".format(\n180                 self.connection.ops.quote_name(table_name), self.cache_bust_counter\n",
+      "col_offset": 12,
+      "end_col_offset": 58,
+      "filename": "target_django/django/db/backends/oracle/introspection.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 179,
+      "line_range": [
+        179
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "72         return (\n73             f\"SELECT {cache_key} \"\n74             f\"FROM %s \"\n75             f\"ORDER BY {cache_key} OFFSET %%s ROWS FETCH FIRST 1 ROWS ONLY\"\n76         )\n",
+      "col_offset": 14,
+      "end_col_offset": 21,
+      "filename": "target_django/django/db/backends/oracle/operations.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 73,
+      "line_range": [
+        73,
+        74,
+        75
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "211                 raise ImproperlyConfigured(\n212                     'Cannot determine PostGIS version for database \"%s\" '\n213                     'using command \"SELECT postgis_lib_version()\". '\n214                     \"GeoDjango requires at least PostGIS version 3.2. \"\n215                     \"Was the database created from a spatial database \"\n216                     \"template?\" % self.connection.settings_dict[\"NAME\"]\n217                 )\n",
+      "col_offset": 20,
+      "end_col_offset": 31,
+      "filename": "target_django/django/contrib/gis/db/backends/postgis/operations.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 212,
+      "line_range": [
+        212,
+        213,
+        214,
+        215,
+        216
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "256         self.execute(\n257             \"INSERT INTO %s (%s) SELECT %s FROM %s\"\n258             % (\n259                 self.quote_name(new_model._meta.db_table),\n260                 \", \".join(self.quote_name(x) for x in mapping),\n261                 \", \".join(mapping.values()),\n262                 self.quote_name(model._meta.db_table),\n263             )\n264         )\n",
+      "col_offset": 12,
+      "end_col_offset": 51,
+      "filename": "target_django/django/db/backends/sqlite3/schema.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 257,
+      "line_range": [
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "161         # by putting a false condition in the WHERE clause.\n162         sql = \"DELETE FROM {} WHERE 0=1 AND 0=%s\".format(Square._meta.db_table)\n163         if params is None:\n",
+      "col_offset": 14,
+      "end_col_offset": 49,
+      "filename": "target_django/tests/backends/base/test_base.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 162,
+      "line_range": [
+        162
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "177         with connection.cursor() as cursor:\n178             query = \"INSERT INTO %s (%s, %s) VALUES (%%s, %%s)\" % (\n179                 connection.introspection.identifier_converter(\"backends_square\"),\n180                 connection.ops.quote_name(\"root\"),\n181                 connection.ops.quote_name(\"square\"),\n182             )\n183             with self.assertRaises(Exception):\n",
+      "col_offset": 20,
+      "end_col_offset": 63,
+      "filename": "target_django/tests/backends/tests.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 178,
+      "line_range": [
+        178,
+        179,
+        180,
+        181,
+        182
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "157         root_column = connection.ops.quote_name(square_opts.get_field(\"root\").column)\n158         sql = f\"UPDATE {table} SET {root_column} = %s + %s WHERE {id_column} = %s\"\n159         with connection.cursor() as cursor:\n",
+      "col_offset": 16,
+      "end_col_offset": 23,
+      "filename": "target_django/tests/backends/tests.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 158,
+      "line_range": [
+        158
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "203         for select in selects:\n204             query = \"SELECT %s FROM raw_query_author\" % select\n205             authors = Author.objects.all()\n",
+      "col_offset": 20,
+      "end_col_offset": 53,
+      "filename": "target_django/tests/raw_query/tests.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 204,
+      "line_range": [
+        204
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "67         self.cursor = self.new_connection.cursor()\n68         sql = \"SELECT * FROM %(db_table)s %(for_update)s;\" % {\n69             \"db_table\": Person._meta.db_table,\n70             \"for_update\": self.new_connection.ops.for_update_sql(),\n71         }\n72         self.cursor.execute(sql, ())\n",
+      "col_offset": 14,
+      "end_col_offset": 58,
+      "filename": "target_django/tests/select_for_update/tests.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 68,
+      "line_range": [
+        68,
+        69,
+        70,
+        71
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "216             City.objects.raw(\n217                 \"select id, name, %s as point from geoapp_city\" % point_select\n218             )\n",
+      "col_offset": 16,
+      "end_col_offset": 63,
+      "filename": "target_django/tests/gis_tests/geoapp/tests.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 217,
+      "line_range": [
+        217
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "261             cursor.execute(\n262                 \"SELECT {} FROM {};\".format(field_name, model._meta.db_table)\n263             )\n",
+      "col_offset": 16,
+      "end_col_offset": 36,
+      "filename": "target_django/tests/schema/tests.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 262,
+      "line_range": [
+        262
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "24         g.db = connect_db()\n25         cur = g.db.execute(\"SELECT * FROM employees WHERE username = '%s' AND password = '%s'\" %(uname, hash_pass(pword)))\n26         if cur.fetchone():\n",
+      "col_offset": 27,
+      "end_col_offset": 94,
+      "filename": "target_hackable/main.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 25,
+      "line_range": [
+        25
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "code": "55     #curs = g.db.execute(\"SELECT * FROM shop_items WHERE name=?\", item) #The safe way to actually get data from db\n56     curs = g.db.execute(\"SELECT * FROM shop_items WHERE name = '%s'\" %item)\n57     results = [dict(name=row[0], quantity=row[1], price=row[2]) for row in curs.fetchall()]\n",
+      "col_offset": 24,
+      "end_col_offset": 68,
+      "filename": "target_hackable/main.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 56,
+      "line_range": [
+        56
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "true_positive"
+    },
+    {
+      "code": "88             c.execute('INSERT INTO shop_items VALUES(\"candy\", \"100\", \"10\")')\n89             c.execute('INSERT INTO employees VALUES(\"itsjasonh\", \"{}\")'.format(hash_pass(\"badword\")))\n90             c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n",
+      "col_offset": 22,
+      "end_col_offset": 71,
+      "filename": "target_hackable/main.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 89,
+      "line_range": [
+        89
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "89             c.execute('INSERT INTO employees VALUES(\"itsjasonh\", \"{}\")'.format(hash_pass(\"badword\")))\n90             c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n91             c.execute('INSERT INTO employees VALUES(\"newguy29\", \"{}\")'.format(hash_pass(\"pass123\")))\n",
+      "col_offset": 22,
+      "end_col_offset": 70,
+      "filename": "target_hackable/main.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 90,
+      "line_range": [
+        90
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    },
+    {
+      "code": "90             c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n91             c.execute('INSERT INTO employees VALUES(\"newguy29\", \"{}\")'.format(hash_pass(\"pass123\")))\n92             connection.commit()\n",
+      "col_offset": 22,
+      "end_col_offset": 70,
+      "filename": "target_hackable/main.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 89,
+        "link": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Possible SQL injection vector through string-based query construction.",
+      "line_number": 91,
+      "line_range": [
+        91
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html",
+      "test_id": "B608",
+      "test_name": "hardcoded_sql_expressions",
+      "label": "false_positive"
+    }
+  ]
+}

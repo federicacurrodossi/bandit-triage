@@ -1,0 +1,40 @@
+# Held-out B101 spec. One line per finding: <label> <path-substring>:<line>
+# Fed to build_heldout.py with the Django report the findings live in:
+#   python3 build_heldout.py b101_spec.txt heldout/heldout_b101.json django_findings/B101.json
+
+# Django assert findings. Source code -> true_positive (vanishes under python -O);
+# real test files -> false_positive. django/test/ is the testing FRAMEWORK
+# (production code), so those are true_positive even though 'test' is in the path.
+
+true_positive contrib/auth/hashers.py:339
+true_positive contrib/staticfiles/storage.py:307
+true_positive core/handlers/asgi.py:226
+true_positive core/mail/handler.py:67
+true_positive db/migrations/autodetector.py:864
+true_positive db/migrations/graph.py:92
+true_positive db/migrations/state.py:108
+true_positive db/models/base.py:975
+true_positive db/models/expressions.py:213
+true_positive models/fields/__init__.py:1445
+true_positive db/models/query.py:913
+true_positive models/sql/query.py:956
+true_positive django/http/multipartparser.py:461
+true_positive django/middleware/csrf.py:156
+true_positive django/template/base.py:463
+true_positive django/test/client.py:92
+true_positive django/test/client.py:105
+true_positive django/test/runner.py:998
+true_positive django/test/utils.py:577
+true_positive django/test/utils.py:580
+false_positive tests/auth_tests/test_management.py:68
+false_positive tests/auth_tests/urls.py:24
+false_positive tests/builtin_server/tests.py:24
+false_positive tests/generic_views/test_base.py:267
+false_positive tests/handlers/tests_custom_error_handlers.py:15
+false_positive tests/inline_formsets/tests.py:221
+false_positive tests/mail/tests.py:100
+false_positive tests/model_formsets/models.py:34
+false_positive tests/raw_query/models.py:15
+false_positive tests/select_related/tests.py:33
+false_positive tests/tasks/tasks.py:77
+false_positive tests/utils_tests/test_http.py:612

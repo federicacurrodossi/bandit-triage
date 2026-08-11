@@ -48,16 +48,51 @@ def load_labeled_report(path):
     return items
 
 
+def collect_report_paths(paths):
+    """Expand the given paths into a sorted list of report files. A directory
+    contributes every .json file inside it; a file is taken as-is. This lets the
+    held-out sets stay as separate per-rule files while a single command
+    evaluates all of them together (regression testing)."""
+    collected = []
+    for p in paths:
+        path = Path(p)
+        if path.is_dir():
+            collected.extend(sorted(path.glob("*.json")))
+        elif path.is_file():
+            collected.append(path)
+        else:
+            print(f"skipping missing path: {p}")
+    # de-duplicate while preserving order
+    seen = set()
+    unique = []
+    for path in collected:
+        rp = path.resolve()
+        if rp not in seen:
+            seen.add(rp)
+            unique.append(path)
+    return unique
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("heldout", help="held-out Bandit report with 'label' on each finding")
+    ap.add_argument("heldout", nargs="+",
+                    help="held-out report file(s) or a directory of them "
+                         "(each finding needs a 'label' field)")
     ap.add_argument("--model", default="model.json")
     ap.add_argument("--out", default="heldout_stats.md",
                     help="Markdown report to write (default: heldout_stats.md)")
     args = ap.parse_args()
 
     model = TriageClassifier.load(args.model)
-    items = load_labeled_report(args.heldout)
+
+    report_paths = collect_report_paths(args.heldout)
+    if not report_paths:
+        print("No held-out report files found.")
+        return
+
+    items = []
+    for rp in report_paths:
+        items.extend(load_labeled_report(rp))
 
     # confusion-matrix counters, tracked overall and per rule
     tp = fp = tn = fn = 0
@@ -94,7 +129,8 @@ def main():
     f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
 
     # ---- console output ----
-    print(f"Held-out evaluation on {args.heldout}")
+    source_names = ", ".join(p.name for p in report_paths)
+    print(f"Held-out evaluation on {len(report_paths)} file(s): {source_names}")
     print("=" * 60)
     print(f"Findings: {total}  ({tp + fn} true, {tn + fp} false by hand label)")
     print(f"Accuracy:  {correct}/{total} ({acc:.0%})")
@@ -106,7 +142,11 @@ def main():
     lines = []
     lines.append("# Held-out evaluation")
     lines.append("")
-    lines.append(f"Source: `{args.heldout}`")
+    if len(report_paths) == 1:
+        lines.append(f"Source: `{report_paths[0].name}`")
+    else:
+        lines.append(f"Sources ({len(report_paths)} files): "
+                     + ", ".join(f"`{p.name}`" for p in report_paths))
     lines.append("")
     lines.append("> A real evaluation on findings the model was never trained on, "
                  "hand-labeled with the same policy as the training data. Unlike the "
