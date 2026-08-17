@@ -26,9 +26,25 @@ header h1 {
 }
 header h1::before { content: "▍"; color: var(--accent); margin-right: 8px; }
 header p { margin: 6px 0 0; font-size: 13px; color: var(--text-dim); }
-main { max-width: 880px; margin: 0 auto; padding: 28px 32px; }
+main {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(0, 1.4fr);
+  gap: 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 32px;
+  /* fill the viewport below the header so each pane can scroll on its own */
+  height: calc(100vh - 82px);
+}
+.pane { min-height: 0; overflow-y: auto; }
+.pane-left { position: sticky; top: 0; }
+/* on narrow screens fall back to a single stacked column */
+@media (max-width: 780px) {
+  main { grid-template-columns: 1fr; height: auto; }
+  .pane { overflow-y: visible; }
+}
 textarea {
-  width: 100%; height: 160px; font-family: ui-monospace, "SF Mono", monospace;
+  width: 100%; height: 260px; font-family: ui-monospace, "SF Mono", monospace;
   font-size: 12px; padding: 12px; border: 1px solid var(--border);
   border-radius: 8px; background: var(--panel); color: var(--text);
   resize: vertical; outline: none;
@@ -46,8 +62,15 @@ button.secondary {
   background: transparent; color: var(--text); border-color: var(--border);
 }
 .summary {
-  font-size: 13px; color: var(--text-dim); margin-bottom: 18px;
+  font-size: 13px; color: var(--text-dim); margin: 0 0 18px;
   font-family: ui-monospace, monospace;
+  position: sticky; top: 0; background: var(--bg);
+  padding: 4px 0 10px; z-index: 1;
+}
+.placeholder {
+  font-size: 13px; color: var(--text-dim); font-family: ui-monospace, monospace;
+  border: 1px dashed var(--border); border-radius: 10px;
+  padding: 24px; text-align: center; margin: 0;
 }
 .card {
   background: var(--panel); border-radius: 10px; border: 1px solid var(--border);

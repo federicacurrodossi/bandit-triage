@@ -10,6 +10,7 @@
     <p>Re-prioritizes Bandit findings by predicted true-positive likelihood, with explanations.</p>
   </header>
   <main>
+    <section class="pane pane-left">
     <form method="post">
       <textarea name="report" placeholder="Paste a Bandit JSON report here (bandit -r . -f json)...">{{ report_text }}</textarea>
       <div class="btnrow">
@@ -19,7 +20,9 @@
     </form>
 
     {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    </section>
 
+    <section class="pane pane-right">
     {% if results is not none %}
       <p class="summary">{{ results|length }} findings ·
         {{ results|selectattr('label', 'equalto', 'likely_true_positive')|list|length }} likely true positive,
@@ -41,7 +44,10 @@
           {% if r.code %}<pre class="code">{{ r.code.rstrip() }}</pre>{% endif %}
         </div>
       {% endfor %}
+    {% else %}
+      <p class="placeholder">Paste a report and hit "Triage findings" to see the re-prioritized list here.</p>
     {% endif %}
+    </section>
   </main>
 </body>
 </html>
