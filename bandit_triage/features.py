@@ -38,7 +38,7 @@ TAINTED_INPUT_RE = re.compile(
 # variable (not a fully static string) right around the flagged call
 DYNAMIC_CONCAT_RE = re.compile(r'(\+\s*\w+|f"[^"]*\{|\.format\()')
 
-KNOWN_TEST_IDS = ["B105", "B101", "B602", "B301", "B608", "B614", "B615"]
+KNOWN_TEST_IDS = ["B101", "B105", "B608"]
 
 FEATURE_NAMES = [
     "confidence",

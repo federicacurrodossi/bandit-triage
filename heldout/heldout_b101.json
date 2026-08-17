@@ -4,7 +4,7 @@
   "metrics": {},
   "results": [
     {
-      "code": "338         algorithm, iterations, salt, hash = encoded.split(\"$\", 3)\n339         assert algorithm == self.algorithm\n340         return {\n",
+      "code": "334\t        hash = base64.b64encode(hash).decode(\"ascii\").strip()\n335\t        return \"%s$%d$%s$%s\" % (self.algorithm, iterations, salt, hash)\n336\t\n337\t    def decode(self, encoded):\n338\t        algorithm, iterations, salt, hash = encoded.split(\"$\", 3)\n339\t        assert algorithm == self.algorithm\n340\t        return {\n341\t            \"algorithm\": algorithm,\n342\t            \"hash\": hash,\n343\t            \"iterations\": int(iterations),\n344\t            \"salt\": salt,\n",
       "col_offset": 8,
       "end_col_offset": 42,
       "filename": "target_django/django/contrib/auth/hashers.py",
@@ -25,7 +25,7 @@
       "label": "true_positive"
     },
     {
-      "code": "306                 # prematurely.\n307                 assert url_path.startswith(settings.STATIC_URL)\n308                 target_name = url_path.removeprefix(settings.STATIC_URL)\n",
+      "code": "302\t                return matched\n303\t\n304\t            if url_path.startswith(\"/\"):\n305\t                # Otherwise the condition above would have returned\n306\t                # prematurely.\n307\t                assert url_path.startswith(settings.STATIC_URL)\n308\t                target_name = url_path.removeprefix(settings.STATIC_URL)\n309\t            else:\n310\t                # We're using the posixpath module to mix paths and URLs\n311\t                # conveniently.\n312\t                source_name = name if os.sep == \"/\" else name.replace(os.sep, \"/\")\n",
       "col_offset": 16,
       "end_col_offset": 63,
       "filename": "target_django/django/contrib/staticfiles/storage.py",
@@ -46,7 +46,7 @@
       "label": "true_positive"
     },
     {
-      "code": "225         # This should never happen.\n226         assert False, \"Invalid ASGI message after request body: %s\" % message[\"type\"]\n227 \n",
+      "code": "221\t        \"\"\"Listen for disconnect from the client.\"\"\"\n222\t        message = await receive()\n223\t        if message[\"type\"] == \"http.disconnect\":\n224\t            raise RequestAborted()\n225\t        # This should never happen.\n226\t        assert False, \"Invalid ASGI message after request body: %s\" % message[\"type\"]\n227\t\n228\t    async def run_get_response(self, request):\n229\t        \"\"\"Get async response.\"\"\"\n230\t        # Use the async mode of BaseHandler.\n231\t        response = await self.get_response_async(request)\n",
       "col_offset": 8,
       "end_col_offset": 85,
       "filename": "target_django/django/core/handlers/asgi.py",
@@ -67,7 +67,7 @@
       "label": "true_positive"
     },
     {
-      "code": "66             # BaseEmailBackend from reporting these as unknown OPTIONS.\n67             assert alias == DEFAULT_MAILER_ALIAS\n68             options = options | _deprecated_kwargs\n",
+      "code": "62\t        # RemovedInDjango70Warning.\n63\t        if _deprecated_kwargs:\n64\t            # Being called from get_connection() to create default mailer\n65\t            # instance with some overrides. _ignore_unknown_kwargs prevents\n66\t            # BaseEmailBackend from reporting these as unknown OPTIONS.\n67\t            assert alias == DEFAULT_MAILER_ALIAS\n68\t            options = options | _deprecated_kwargs\n69\t            options |= {\"_ignore_unknown_kwargs\": set(_deprecated_kwargs)}\n70\t\n71\t        backend_path = config.get(\"BACKEND\", DEFAULT_MAILER_BACKEND)\n72\t        try:\n",
       "col_offset": 12,
       "end_col_offset": 48,
       "filename": "target_django/django/core/mail/handler.py",
@@ -88,7 +88,7 @@
       "label": "true_positive"
     },
     {
-      "code": "863             model_state = self.to_state.models[app_label, model_name]\n864             assert model_state.options.get(\"proxy\")\n865             # Depend on the deletion of any possible non-proxy version of us\n",
+      "code": "859\t        safe to skip all the pointless field stuff and chuck out an operation.\n860\t        \"\"\"\n861\t        added = self.new_proxy_keys - self.old_proxy_keys\n862\t        for app_label, model_name in sorted(added):\n863\t            model_state = self.to_state.models[app_label, model_name]\n864\t            assert model_state.options.get(\"proxy\")\n865\t            # Depend on the deletion of any possible non-proxy version of us\n866\t            dependencies = [\n867\t                OperationDependency(\n868\t                    app_label, model_name, None, OperationDependency.Type.REMOVE\n869\t                ),\n",
       "col_offset": 12,
       "end_col_offset": 51,
       "filename": "target_django/django/db/migrations/autodetector.py",
@@ -109,7 +109,7 @@
       "label": "true_positive"
     },
     {
-      "code": "91     def add_node(self, key, migration):\n92         assert key not in self.node_map\n93         node = Node(key)\n",
+      "code": "87\t    def __init__(self):\n88\t        self.node_map = {}\n89\t        self.nodes = {}\n90\t\n91\t    def add_node(self, key, migration):\n92\t        assert key not in self.node_map\n93\t        node = Node(key)\n94\t        self.node_map[key] = node\n95\t        self.nodes[key] = migration\n96\t\n97\t    def add_dummy_node(self, key, origin, error_message):\n",
       "col_offset": 8,
       "end_col_offset": 39,
       "filename": "target_django/django/db/migrations/graph.py",
@@ -130,7 +130,7 @@
       "label": "true_positive"
     },
     {
-      "code": "107         else:\n108             assert isinstance(real_apps, set)\n109         self.real_apps = real_apps\n",
+      "code": "103\t        self.models = models or {}\n104\t        # Apps to include from main registry, usually unmigrated ones\n105\t        if real_apps is None:\n106\t            real_apps = set()\n107\t        else:\n108\t            assert isinstance(real_apps, set)\n109\t        self.real_apps = real_apps\n110\t        self.is_delayed = False\n111\t        # {remote_model_key: {model_key: {field_name: field}}}\n112\t        self._relations = None\n113\t\n",
       "col_offset": 12,
       "end_col_offset": 45,
       "filename": "target_django/django/db/migrations/state.py",
@@ -151,7 +151,7 @@
       "label": "true_positive"
     },
     {
-      "code": "974         using = using or router.db_for_write(self.__class__, instance=self)\n975         assert not (force_insert and (force_update or update_fields))\n976         assert update_fields is None or update_fields\n",
+      "code": "970\t        The 'raw' argument is telling save_base not to save any parent\n971\t        models and not to do any changes to the values before save. This\n972\t        is used by fixture loading.\n973\t        \"\"\"\n974\t        using = using or router.db_for_write(self.__class__, instance=self)\n975\t        assert not (force_insert and (force_update or update_fields))\n976\t        assert update_fields is None or update_fields\n977\t        cls = origin = self.__class__\n978\t        # Skip proxies, but keep the origin as the proxy model.\n979\t        if cls._meta.proxy:\n980\t            cls = cls._meta.concrete_model\n",
       "col_offset": 8,
       "end_col_offset": 69,
       "filename": "target_django/django/db/models/base.py",
@@ -172,7 +172,7 @@
       "label": "true_positive"
     },
     {
-      "code": "212     def set_source_expressions(self, exprs):\n213         assert not exprs\n214 \n",
+      "code": "208\t\n209\t    def get_source_expressions(self):\n210\t        return []\n211\t\n212\t    def set_source_expressions(self, exprs):\n213\t        assert not exprs\n214\t\n215\t    def _parse_expressions(self, *expressions):\n216\t        return [\n217\t            (\n218\t                arg\n",
       "col_offset": 8,
       "end_col_offset": 24,
       "filename": "target_django/django/db/models/expressions.py",
@@ -193,7 +193,7 @@
       "label": "true_positive"
     },
     {
-      "code": "1444         else:\n1445             assert isinstance(value, datetime.date)\n1446             lower = lower.date()\n",
+      "code": "1440\t        lower = now - offset\n1441\t        upper = now + offset\n1442\t        if isinstance(value, datetime.datetime):\n1443\t            value = _to_naive(value)\n1444\t        else:\n1445\t            assert isinstance(value, datetime.date)\n1446\t            lower = lower.date()\n1447\t            upper = upper.date()\n1448\t        if lower <= value <= upper:\n1449\t            return [\n1450\t                checks.Warning(\n",
       "col_offset": 12,
       "end_col_offset": 51,
       "filename": "target_django/django/db/models/fields/__init__.py",
@@ -214,7 +214,7 @@
       "label": "true_positive"
     },
     {
-      "code": "912                 ):\n913                     assert len(returned_columns) == len(objs_without_pk)\n914                 for obj_without_pk, results in zip(objs_without_pk, returned_columns):\n",
+      "code": "908\t                connection = connections[self.db]\n909\t                if (\n910\t                    connection.features.can_return_rows_from_bulk_insert\n911\t                    and on_conflict is None\n912\t                ):\n913\t                    assert len(returned_columns) == len(objs_without_pk)\n914\t                for obj_without_pk, results in zip(objs_without_pk, returned_columns):\n915\t                    for result, field in zip(results, opts.db_returning_fields):\n916\t                        setattr(obj_without_pk, field.attname, result)\n917\t                    obj_without_pk._state.adding = False\n918\t                    obj_without_pk._state.db = self.db\n",
       "col_offset": 20,
       "end_col_offset": 72,
       "filename": "target_django/django/db/models/query.py",
@@ -235,7 +235,7 @@
       "label": "true_positive"
     },
     {
-      "code": "955             # Only the first alias (skipped above) should have None join_type\n956             assert self.alias_map[alias].join_type is not None\n957             parent_alias = self.alias_map[alias].parent_alias\n",
+      "code": "951\t                # This is the base table (first FROM entry) - this table\n952\t                # isn't really joined at all in the query, so we should not\n953\t                # alter its join type.\n954\t                continue\n955\t            # Only the first alias (skipped above) should have None join_type\n956\t            assert self.alias_map[alias].join_type is not None\n957\t            parent_alias = self.alias_map[alias].parent_alias\n958\t            parent_louter = (\n959\t                parent_alias and self.alias_map[parent_alias].join_type == LOUTER\n960\t            )\n961\t            already_louter = self.alias_map[alias].join_type == LOUTER\n",
       "col_offset": 12,
       "end_col_offset": 62,
       "filename": "target_django/django/db/models/sql/query.py",
@@ -256,7 +256,7 @@
       "label": "true_positive"
     },
     {
-      "code": "460             while remaining != 0:\n461                 assert remaining > 0, \"remaining bytes to read should never go negative\"\n462 \n",
+      "code": "456\t\n457\t            # otherwise do some bookkeeping to return exactly enough\n458\t            # of the stream and stashing any extra content we get from\n459\t            # the producer\n460\t            while remaining != 0:\n461\t                assert remaining > 0, \"remaining bytes to read should never go negative\"\n462\t\n463\t                try:\n464\t                    chunk = next(self)\n465\t                except StopIteration:\n466\t                    return\n",
       "col_offset": 16,
       "end_col_offset": 88,
       "filename": "target_django/django/http/multipartparser.py",
@@ -277,7 +277,7 @@
       "label": "true_positive"
     },
     {
-      "code": "155         request_csrf_token = _unmask_cipher_token(request_csrf_token)\n156     assert len(request_csrf_token) == CSRF_SECRET_LENGTH\n157     return constant_time_compare(request_csrf_token, csrf_secret)\n",
+      "code": "151\t    length CSRF_TOKEN_LENGTH, it is a masked secret.\n152\t    \"\"\"\n153\t    # Only unmask tokens that are exactly CSRF_TOKEN_LENGTH characters long.\n154\t    if len(request_csrf_token) == CSRF_TOKEN_LENGTH:\n155\t        request_csrf_token = _unmask_cipher_token(request_csrf_token)\n156\t    assert len(request_csrf_token) == CSRF_SECRET_LENGTH\n157\t    return constant_time_compare(request_csrf_token, csrf_secret)\n158\t\n159\t\n160\tclass RejectRequest(Exception):\n161\t    def __init__(self, reason):\n",
       "col_offset": 4,
       "end_col_offset": 56,
       "filename": "target_django/django/middleware/csrf.py",
@@ -298,7 +298,7 @@
       "label": "true_positive"
     },
     {
-      "code": "462                 # BLOCK_TAG_START was handled above.\n463                 assert token_start == COMMENT_TAG_START\n464                 return Token(TokenType.COMMENT, content, position, lineno)\n",
+      "code": "458\t            if not self.verbatim:\n459\t                content = token_string[2:-2].strip()\n460\t                if token_start == VARIABLE_TAG_START:\n461\t                    return Token(TokenType.VAR, content, position, lineno)\n462\t                # BLOCK_TAG_START was handled above.\n463\t                assert token_start == COMMENT_TAG_START\n464\t                return Token(TokenType.COMMENT, content, position, lineno)\n465\t        return Token(TokenType.TEXT, token_string, position, lineno)\n466\t\n467\t\n468\tclass DebugLexer(Lexer):\n",
       "col_offset": 16,
       "end_col_offset": 55,
       "filename": "target_django/django/template/base.py",
@@ -319,7 +319,7 @@
       "label": "true_positive"
     },
     {
-      "code": "91             size = self.__len\n92         assert (\n93             self.__len >= size\n94         ), \"Cannot read more than the available bytes from the HTTP incoming data.\"\n95         content = self.__content.read(size)\n",
+      "code": "87\t        if not self.read_started:\n88\t            self.__content.seek(0)\n89\t            self.read_started = True\n90\t        if size == -1 or size is None:\n91\t            size = self.__len\n92\t        assert (\n93\t            self.__len >= size\n94\t        ), \"Cannot read more than the available bytes from the HTTP incoming data.\"\n95\t        content = self.__content.read(size)\n96\t        self.__len -= len(content)\n97\t        return content\n",
       "col_offset": 8,
       "end_col_offset": 83,
       "filename": "target_django/django/test/client.py",
@@ -342,7 +342,7 @@
       "label": "true_positive"
     },
     {
-      "code": "104             size = self.__len\n105         assert (\n106             self.__len >= size\n107         ), \"Cannot read more than the available bytes from the HTTP incoming data.\"\n108         content = self.__content.readline(size)\n",
+      "code": "100\t        if not self.read_started:\n101\t            self.__content.seek(0)\n102\t            self.read_started = True\n103\t        if size == -1 or size is None:\n104\t            size = self.__len\n105\t        assert (\n106\t            self.__len >= size\n107\t        ), \"Cannot read more than the available bytes from the HTTP incoming data.\"\n108\t        content = self.__content.readline(size)\n109\t        self.__len -= len(content)\n110\t        return content\n",
       "col_offset": 8,
       "end_col_offset": 83,
       "filename": "target_django/django/test/client.py",
@@ -365,7 +365,7 @@
       "label": "true_positive"
     },
     {
-      "code": "997             if os.path.exists(label_as_path):\n998                 assert tests is None\n999                 raise RuntimeError(\n",
+      "code": "993\t        if is_importable:\n994\t            if not is_package:\n995\t                return tests\n996\t        elif not os.path.isdir(label_as_path):\n997\t            if os.path.exists(label_as_path):\n998\t                assert tests is None\n999\t                raise RuntimeError(\n1000\t                    f\"One of the test labels is a path to a file: {label!r}, \"\n1001\t                    f\"which is not supported. Use a dotted module name or \"\n1002\t                    f\"path to a directory instead.\"\n1003\t                )\n",
       "col_offset": 16,
       "end_col_offset": 36,
       "filename": "target_django/django/test/runner.py",
@@ -386,7 +386,7 @@
       "label": "true_positive"
     },
     {
-      "code": "576             # Hack used when instantiating from SimpleTestCase.setUpClass.\n577             assert not kwargs\n578             self.operations = args[0]\n",
+      "code": "572\t    \"\"\"\n573\t\n574\t    def __init__(self, *args, **kwargs):\n575\t        if args:\n576\t            # Hack used when instantiating from SimpleTestCase.setUpClass.\n577\t            assert not kwargs\n578\t            self.operations = args[0]\n579\t        else:\n580\t            assert not args\n581\t            self.operations = list(kwargs.items())\n582\t        super(override_settings, self).__init__()\n",
       "col_offset": 12,
       "end_col_offset": 29,
       "filename": "target_django/django/test/utils.py",
@@ -407,7 +407,7 @@
       "label": "true_positive"
     },
     {
-      "code": "579         else:\n580             assert not args\n581             self.operations = list(kwargs.items())\n",
+      "code": "575\t        if args:\n576\t            # Hack used when instantiating from SimpleTestCase.setUpClass.\n577\t            assert not kwargs\n578\t            self.operations = args[0]\n579\t        else:\n580\t            assert not args\n581\t            self.operations = list(kwargs.items())\n582\t        super(override_settings, self).__init__()\n583\t\n584\t    def save_options(self, test_func):\n585\t        if test_func._modified_settings is None:\n",
       "col_offset": 12,
       "end_col_offset": 27,
       "filename": "target_django/django/test/utils.py",
@@ -428,7 +428,7 @@
       "label": "true_positive"
     },
     {
-      "code": "67             def mock_input(prompt):\n68                 assert \"__proxy__\" not in prompt\n69                 response = None\n",
+      "code": "63\t                    if callable(inputs[\"password\"]):\n64\t                        return inputs[\"password\"]()\n65\t                    return inputs[\"password\"]\n66\t\n67\t            def mock_input(prompt):\n68\t                assert \"__proxy__\" not in prompt\n69\t                response = None\n70\t                for key, val in inputs.items():\n71\t                    if val == \"KeyboardInterrupt\":\n72\t                        raise KeyboardInterrupt\n73\t                    # get() fallback because sometimes 'key' is the actual\n",
       "col_offset": 16,
       "end_col_offset": 48,
       "filename": "target_django/tests/auth_tests/test_management.py",
@@ -449,7 +449,7 @@
       "label": "false_positive"
     },
     {
-      "code": "23     def __init__(self, request, *args, **kwargs):\n24         assert isinstance(request, HttpRequest)\n25         super().__init__(request, *args, **kwargs)\n",
+      "code": "19\tfrom django.views.i18n import set_language\n20\t\n21\t\n22\tclass CustomRequestAuthenticationForm(AuthenticationForm):\n23\t    def __init__(self, request, *args, **kwargs):\n24\t        assert isinstance(request, HttpRequest)\n25\t        super().__init__(request, *args, **kwargs)\n26\t\n27\t\n28\t@never_cache\n29\tdef remote_user_auth_view(request):\n",
       "col_offset": 8,
       "end_col_offset": 47,
       "filename": "target_django/tests/auth_tests/urls.py",
@@ -470,7 +470,7 @@
       "label": "false_positive"
     },
     {
-      "code": "23 \n24         assert isinstance(data, bytes), \"write() argument must be bytestring\"\n25 \n",
+      "code": "19\t    error_status = \"500 INTERNAL SERVER ERROR\"\n20\t\n21\t    def write(self, data):\n22\t        \"\"\"'write()' callable as specified by PEP 3333\"\"\"\n23\t\n24\t        assert isinstance(data, bytes), \"write() argument must be bytestring\"\n25\t\n26\t        if not self.status:\n27\t            raise AssertionError(\"write() before start_response()\")\n28\t\n29\t        elif not self.headers_sent:\n",
       "col_offset": 8,
       "end_col_offset": 77,
       "filename": "target_django/tests/builtin_server/tests.py",
@@ -491,7 +491,7 @@
       "label": "false_positive"
     },
     {
-      "code": "266             def dispatch(self, request, *args, **kwargs):\n267                 assert hasattr(self, \"attr\")\n268                 return super().dispatch(request, *args, **kwargs)\n",
+      "code": "262\t                self.attr = True\n263\t                super().setup(request, *args, **kwargs)\n264\t\n265\t        class CheckSetupView(SetAttributeMixin, SimpleView):\n266\t            def dispatch(self, request, *args, **kwargs):\n267\t                assert hasattr(self, \"attr\")\n268\t                return super().dispatch(request, *args, **kwargs)\n269\t\n270\t        response = CheckSetupView.as_view()(self.rf.get(\"/\"))\n271\t        self.assertEqual(response.status_code, 200)\n272\t\n",
       "col_offset": 16,
       "end_col_offset": 44,
       "filename": "target_django/tests/generic_views/test_base.py",
@@ -512,7 +512,7 @@
       "label": "false_positive"
     },
     {
-      "code": "14         # TemplateResponse-based exception response.\n15         assert response.content\n16         return response\n",
+      "code": "10\t\n11\t    def __call__(self, request):\n12\t        response = self.get_response(request)\n13\t        # Response.content should be available in the middleware even with a\n14\t        # TemplateResponse-based exception response.\n15\t        assert response.content\n16\t        return response\n17\t\n18\t\n19\tdef template_response_error_handler(request, exception=None):\n20\t    return TemplateResponse(request, \"test_handler.html\", status=403)\n",
       "col_offset": 8,
       "end_col_offset": 31,
       "filename": "target_django/tests/handlers/tests_custom_error_handlers.py",
@@ -533,7 +533,7 @@
       "label": "false_positive"
     },
     {
-      "code": "220             def __init__(self, *args, **kwargs):\n221                 assert \"poet\" in self._meta.fields\n222                 super().__init__(*args, **kwargs)\n",
+      "code": "216\t        A foreign key field is in Meta for all forms in the formset (#26538).\n217\t        \"\"\"\n218\t\n219\t        class PoemModelForm(ModelForm):\n220\t            def __init__(self, *args, **kwargs):\n221\t                assert \"poet\" in self._meta.fields\n222\t                super().__init__(*args, **kwargs)\n223\t\n224\t        poet = Poet.objects.create(name=\"test\")\n225\t        poet.poem_set.create(name=\"first test poem\")\n226\t        poet.poem_set.create(name=\"second test poem\")\n",
       "col_offset": 16,
       "end_col_offset": 50,
       "filename": "target_django/tests/inline_formsets/tests.py",
@@ -554,7 +554,7 @@
       "label": "false_positive"
     },
     {
-      "code": "99             # Headers should not appear more than once.\n100             assert len(message.get_all(header)) == 1\n101             # Reconstruct Address objects using legacy APIs.\n",
+      "code": "95\t            # The bug only affects structured address headers.\n96\t            continue\n97\t        raw_value = raw_headers[header]\n98\t        if RFC2047_PREFIX in raw_value:\n99\t            # Headers should not appear more than once.\n100\t            assert len(message.get_all(header)) == 1\n101\t            # Reconstruct Address objects using legacy APIs.\n102\t            unfolded = raw_value.replace(\"\\r\\n\", \"\").replace(\"\\n\", \"\")\n103\t            corrected_addresses = (\n104\t                build_address(rfc2047_decode(name), address)\n105\t                for name, address in getaddresses([unfolded])\n",
       "col_offset": 12,
       "end_col_offset": 52,
       "filename": "target_django/tests/mail/tests.py",
@@ -575,7 +575,7 @@
       "label": "false_positive"
     },
     {
-      "code": "33         # Ensure author is always accessible in clean method\n34         assert self.author.name is not None\n35 \n",
+      "code": "29\t    def __str__(self):\n30\t        return self.title\n31\t\n32\t    def clean(self):\n33\t        # Ensure author is always accessible in clean method\n34\t        assert self.author.name is not None\n35\t\n36\t\n37\tclass BookWithCustomPK(models.Model):\n38\t    my_pk = models.DecimalField(max_digits=5, decimal_places=0, primary_key=True)\n39\t    author = models.ForeignKey(Author, models.CASCADE)\n",
       "col_offset": 8,
       "end_col_offset": 43,
       "filename": "target_django/tests/model_formsets/models.py",
@@ -596,7 +596,7 @@
       "label": "false_positive"
     },
     {
-      "code": "14         for k in kwargs:\n15             assert k in [f.attname for f in self._meta.fields], (\n16                 \"Author.__init__ got an unexpected parameter: %s\" % k\n17             )\n18 \n",
+      "code": "10\t        super().__init__(*args, **kwargs)\n11\t        # Protect against annotations being passed to __init__ --\n12\t        # this'll make the test suite get angry if annotations aren't\n13\t        # treated differently than fields.\n14\t        for k in kwargs:\n15\t            assert k in [f.attname for f in self._meta.fields], (\n16\t                \"Author.__init__ got an unexpected parameter: %s\" % k\n17\t            )\n18\t\n19\t\n20\tclass Book(models.Model):\n",
       "col_offset": 12,
       "end_col_offset": 13,
       "filename": "target_django/tests/raw_query/models.py",
@@ -619,7 +619,7 @@
       "label": "false_positive"
     },
     {
-      "code": "32         models = [Domain, Kingdom, Phylum, Klass, Order, Family, Genus, Species]\n33         assert len(names) == len(models), (names, models)\n34 \n",
+      "code": "28\t        \"\"\"\n29\t        Helper to create a complete tree.\n30\t        \"\"\"\n31\t        names = stringtree.split()\n32\t        models = [Domain, Kingdom, Phylum, Klass, Order, Family, Genus, Species]\n33\t        assert len(names) == len(models), (names, models)\n34\t\n35\t        parent = None\n36\t        for name, model in zip(names, models):\n37\t            try:\n38\t                obj = model.objects.get(name=name)\n",
       "col_offset": 8,
       "end_col_offset": 57,
       "filename": "target_django/tests/select_related/tests.py",
@@ -640,7 +640,7 @@
       "label": "false_positive"
     },
     {
-      "code": "76 def test_context(context, attempt):\n77     assert isinstance(context, TaskContext)\n78     assert context.attempt == attempt\n",
+      "code": "72\t    return context.task_result.id\n73\t\n74\t\n75\t@task(takes_context=True)\n76\tdef test_context(context, attempt):\n77\t    assert isinstance(context, TaskContext)\n78\t    assert context.attempt == attempt\n",
       "col_offset": 4,
       "end_col_offset": 43,
       "filename": "target_django/tests/tasks/tasks.py",
@@ -661,7 +661,7 @@
       "label": "false_positive"
     },
     {
-      "code": "611                 line = base_header + title\n612                 assert len(line) == line_length\n613 \n",
+      "code": "607\t        ]\n608\t        for line_length, kwargs in test_data:\n609\t            with self.subTest(line_length=line_length, kwargs=kwargs):\n610\t                title = \"x\" * (line_length - base_header_len)\n611\t                line = base_header + title\n612\t                assert len(line) == line_length\n613\t\n614\t                parsed = parse_header_parameters(line, **kwargs)\n615\t\n616\t                expected = (\"content-type: application/x-stuff\", {\"title\": title})\n617\t                self.assertEqual(parsed, expected)\n",
       "col_offset": 16,
       "end_col_offset": 47,
       "filename": "target_django/tests/utils_tests/test_http.py",

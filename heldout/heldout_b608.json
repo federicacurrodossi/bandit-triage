@@ -4,7 +4,7 @@
   "metrics": {},
   "results": [
     {
-      "code": "135             if self._cull_probability and random.random() <= self._cull_probability:\n136                 cursor.execute(\"SELECT COUNT(*) FROM %s\" % table)\n137                 num = cursor.fetchone()[0]\n",
+      "code": "131\t            else:\n132\t                tz = UTC if settings.USE_TZ else None\n133\t                exp = datetime.fromtimestamp(timeout, tz=tz)\n134\t            exp = exp.replace(microsecond=0)\n135\t            if self._cull_probability and random.random() <= self._cull_probability:\n136\t                cursor.execute(\"SELECT COUNT(*) FROM %s\" % table)\n137\t                num = cursor.fetchone()[0]\n138\t                if num > self._max_entries:\n139\t                    self._cull(db, cursor, now, num)\n140\t            pickled = pickle.dumps(value, self.pickle_protocol)\n141\t            # The DB column is expecting a string, so make sure the value is a\n",
       "col_offset": 31,
       "end_col_offset": 56,
       "filename": "target_django/django/core/cache/backends/db.py",
@@ -25,7 +25,7 @@
       "label": "false_positive"
     },
     {
-      "code": "232             cursor.execute(\n233                 \"DELETE FROM %s WHERE %s IN (%s)\"\n234                 % (\n235                     table,\n236                     quote_name(\"cache_key\"),\n237                     \", \".join([\"%s\"] * len(keys)),\n238                 ),\n239                 keys,\n",
+      "code": "228\t        quote_name = connection.ops.quote_name\n229\t        table = quote_name(self._table)\n230\t\n231\t        with connection.cursor() as cursor:\n232\t            cursor.execute(\n233\t                \"DELETE FROM %s WHERE %s IN (%s)\"\n234\t                % (\n235\t                    table,\n236\t                    quote_name(\"cache_key\"),\n237\t                    \", \".join([\"%s\"] * len(keys)),\n238\t                ),\n",
       "col_offset": 16,
       "end_col_offset": 49,
       "filename": "target_django/django/core/cache/backends/db.py",
@@ -51,7 +51,7 @@
       "label": "false_positive"
     },
     {
-      "code": "253             cursor.execute(\n254                 \"SELECT %s FROM %s WHERE %s = %%s and %s > %%s\"\n255                 % (\n256                     quote_name(\"cache_key\"),\n257                     quote_name(self._table),\n258                     quote_name(\"cache_key\"),\n259                     quote_name(\"expires\"),\n260                 ),\n261                 [key, connection.ops.adapt_datetimefield_value(now)],\n",
+      "code": "249\t\n250\t        now = tz_now().replace(microsecond=0, tzinfo=None)\n251\t\n252\t        with connection.cursor() as cursor:\n253\t            cursor.execute(\n254\t                \"SELECT %s FROM %s WHERE %s = %%s and %s > %%s\"\n255\t                % (\n256\t                    quote_name(\"cache_key\"),\n257\t                    quote_name(self._table),\n258\t                    quote_name(\"cache_key\"),\n259\t                    quote_name(\"expires\"),\n",
       "col_offset": 16,
       "end_col_offset": 63,
       "filename": "target_django/django/core/cache/backends/db.py",
@@ -78,7 +78,7 @@
       "label": "false_positive"
     },
     {
-      "code": "301         with connection.cursor() as cursor:\n302             cursor.execute(\"DELETE FROM %s\" % table)\n",
+      "code": "297\t    def clear(self):\n298\t        db = router.db_for_write(self.cache_model_class)\n299\t        connection = connections[db]\n300\t        table = connection.ops.quote_name(self._table)\n301\t        with connection.cursor() as cursor:\n302\t            cursor.execute(\"DELETE FROM %s\" % table)\n",
       "col_offset": 27,
       "end_col_offset": 43,
       "filename": "target_django/django/core/cache/backends/db.py",
@@ -99,7 +99,7 @@
       "label": "false_positive"
     },
     {
-      "code": "112         cache_key = self.quote_name(\"cache_key\")\n113         return f\"SELECT {cache_key} FROM %s ORDER BY {cache_key} LIMIT 1 OFFSET %%s\"\n114 \n",
+      "code": "108\t\n109\t        This is used by the 'db' cache backend to determine where to start\n110\t        culling.\n111\t        \"\"\"\n112\t        cache_key = self.quote_name(\"cache_key\")\n113\t        return f\"SELECT {cache_key} FROM %s ORDER BY {cache_key} LIMIT 1 OFFSET %%s\"\n114\t\n115\t    def unification_cast_sql(self, output_field):\n116\t        \"\"\"\n117\t        Given a field instance, return the SQL that casts the result of a union\n118\t        to that type. The resulting string should contain a '%s' placeholder\n",
       "col_offset": 17,
       "end_col_offset": 24,
       "filename": "target_django/django/db/backends/base/operations.py",
@@ -120,7 +120,7 @@
       "label": "false_positive"
     },
     {
-      "code": "339                     cursor.execute(\n340                         \"\"\"\n341                         SELECT REFERRING.`%s`, REFERRING.`%s` FROM `%s` as REFERRING\n342                         LEFT JOIN `%s` as REFERRED\n343                         ON (REFERRING.`%s` = REFERRED.`%s`)\n344                         WHERE REFERRING.`%s` IS NOT NULL AND REFERRED.`%s` IS NULL\n345                         \"\"\"\n346                         % (\n347                             primary_key_column_name,\n348                             column_name,\n349                             table_name,\n350                             referenced_table_name,\n351                             column_name,\n352                             referenced_column_name,\n353                             column_name,\n354                             referenced_column_name,\n355                         )\n356                     )\n",
+      "code": "335\t                    referenced_column_name,\n336\t                    referenced_table_name,\n337\t                    _,\n338\t                ) in relations.items():\n339\t                    cursor.execute(\n340\t                        \"\"\"\n341\t                        SELECT REFERRING.`%s`, REFERRING.`%s` FROM `%s` as REFERRING\n342\t                        LEFT JOIN `%s` as REFERRED\n343\t                        ON (REFERRING.`%s` = REFERRED.`%s`)\n344\t                        WHERE REFERRING.`%s` IS NOT NULL AND REFERRED.`%s` IS NULL\n345\t                        \"\"\"\n",
       "col_offset": 24,
       "end_col_offset": 27,
       "filename": "target_django/django/db/backends/mysql/base.py",
@@ -156,7 +156,7 @@
       "label": "false_positive"
     },
     {
-      "code": "159         cursor.execute(\n160             \"SELECT * FROM %s LIMIT 1\" % self.connection.ops.quote_name(table_name)\n161         )\n",
+      "code": "155\t            [default_column_collation, table_name],\n156\t        )\n157\t        field_info = {line[0]: InfoLine(*line) for line in cursor.fetchall()}\n158\t\n159\t        cursor.execute(\n160\t            \"SELECT * FROM %s LIMIT 1\" % self.connection.ops.quote_name(table_name)\n161\t        )\n162\t\n163\t        def to_int(i):\n164\t            return int(i) if i is not None else i\n165\t\n",
       "col_offset": 12,
       "end_col_offset": 38,
       "filename": "target_django/django/db/backends/mysql/introspection.py",
@@ -177,7 +177,7 @@
       "label": "false_positive"
     },
     {
-      "code": "93             self.execute(\n94                 \"UPDATE %(table)s SET %(column)s = %%s\"\n95                 % {\n96                     \"table\": self.quote_name(model._meta.db_table),\n97                     \"column\": self.quote_name(field.column),\n98                 },\n99                 [effective_default],\n",
+      "code": "89\t        # Simulate the effect of a one-off default.\n90\t        # field.default may be unhashable, so a set isn't used for \"in\" check.\n91\t        if self.skip_default(field) and field.default not in (None, NOT_PROVIDED):\n92\t            effective_default = self.effective_default(field)\n93\t            self.execute(\n94\t                \"UPDATE %(table)s SET %(column)s = %%s\"\n95\t                % {\n96\t                    \"table\": self.quote_name(model._meta.db_table),\n97\t                    \"column\": self.quote_name(field.column),\n98\t                },\n99\t                [effective_default],\n",
       "col_offset": 16,
       "end_col_offset": 55,
       "filename": "target_django/django/db/backends/mysql/schema.py",
@@ -202,7 +202,7 @@
       "label": "false_positive"
     },
     {
-      "code": "337                 cursor.execute(\n338                     \"SELECT 1 FROM DUAL WHERE DUMMY %s\"\n339                     % self._standard_operators[\"contains\"],\n340                     [\"X\"],\n",
+      "code": "333\t            # instance per thread, since subsequent connections will use\n334\t            # the same settings.\n335\t            cursor = self.create_cursor()\n336\t            try:\n337\t                cursor.execute(\n338\t                    \"SELECT 1 FROM DUAL WHERE DUMMY %s\"\n339\t                    % self._standard_operators[\"contains\"],\n340\t                    [\"X\"],\n341\t                )\n342\t            except Database.DatabaseError:\n343\t                self.operators = self._likec_operators\n",
       "col_offset": 20,
       "end_col_offset": 55,
       "filename": "target_django/django/db/backends/oracle/base.py",
@@ -224,7 +224,7 @@
       "label": "false_positive"
     },
     {
-      "code": "178         cursor.execute(\n179             \"SELECT * FROM {} WHERE ROWNUM < 2 AND {} > 0\".format(\n180                 self.connection.ops.quote_name(table_name), self.cache_bust_counter\n",
+      "code": "174\t                comment,\n175\t            ) in cursor.fetchall()\n176\t        }\n177\t        self.cache_bust_counter += 1\n178\t        cursor.execute(\n179\t            \"SELECT * FROM {} WHERE ROWNUM < 2 AND {} > 0\".format(\n180\t                self.connection.ops.quote_name(table_name), self.cache_bust_counter\n181\t            )\n182\t        )\n183\t        description = []\n184\t        for desc in cursor.description:\n",
       "col_offset": 12,
       "end_col_offset": 58,
       "filename": "target_django/django/db/backends/oracle/introspection.py",
@@ -245,7 +245,7 @@
       "label": "false_positive"
     },
     {
-      "code": "72         return (\n73             f\"SELECT {cache_key} \"\n74             f\"FROM %s \"\n75             f\"ORDER BY {cache_key} OFFSET %%s ROWS FETCH FIRST 1 ROWS ONLY\"\n76         )\n",
+      "code": "68\t    }\n69\t\n70\t    def cache_key_culling_sql(self):\n71\t        cache_key = self.quote_name(\"cache_key\")\n72\t        return (\n73\t            f\"SELECT {cache_key} \"\n74\t            f\"FROM %s \"\n75\t            f\"ORDER BY {cache_key} OFFSET %%s ROWS FETCH FIRST 1 ROWS ONLY\"\n76\t        )\n77\t\n78\t    # EXTRACT format cannot be passed in parameters.\n",
       "col_offset": 14,
       "end_col_offset": 21,
       "filename": "target_django/django/db/backends/oracle/operations.py",
@@ -268,7 +268,7 @@
       "label": "false_positive"
     },
     {
-      "code": "211                 raise ImproperlyConfigured(\n212                     'Cannot determine PostGIS version for database \"%s\" '\n213                     'using command \"SELECT postgis_lib_version()\". '\n214                     \"GeoDjango requires at least PostGIS version 3.2. \"\n215                     \"Was the database created from a spatial database \"\n216                     \"template?\" % self.connection.settings_dict[\"NAME\"]\n217                 )\n",
+      "code": "207\t\n208\t            try:\n209\t                vtup = self.postgis_version_tuple()\n210\t            except ProgrammingError:\n211\t                raise ImproperlyConfigured(\n212\t                    'Cannot determine PostGIS version for database \"%s\" '\n213\t                    'using command \"SELECT postgis_lib_version()\". '\n214\t                    \"GeoDjango requires at least PostGIS version 3.2. \"\n215\t                    \"Was the database created from a spatial database \"\n216\t                    \"template?\" % self.connection.settings_dict[\"NAME\"]\n217\t                )\n",
       "col_offset": 20,
       "end_col_offset": 31,
       "filename": "target_django/django/contrib/gis/db/backends/postgis/operations.py",
@@ -293,7 +293,7 @@
       "label": "false_positive"
     },
     {
-      "code": "256         self.execute(\n257             \"INSERT INTO %s (%s) SELECT %s FROM %s\"\n258             % (\n259                 self.quote_name(new_model._meta.db_table),\n260                 \", \".join(self.quote_name(x) for x in mapping),\n261                 \", \".join(mapping.values()),\n262                 self.quote_name(model._meta.db_table),\n263             )\n264         )\n",
+      "code": "252\t        # Create a new table with the updated schema.\n253\t        self.create_model(new_model)\n254\t\n255\t        # Copy data from the old table into the new table\n256\t        self.execute(\n257\t            \"INSERT INTO %s (%s) SELECT %s FROM %s\"\n258\t            % (\n259\t                self.quote_name(new_model._meta.db_table),\n260\t                \", \".join(self.quote_name(x) for x in mapping),\n261\t                \", \".join(mapping.values()),\n262\t                self.quote_name(model._meta.db_table),\n",
       "col_offset": 12,
       "end_col_offset": 51,
       "filename": "target_django/django/db/backends/sqlite3/schema.py",
@@ -320,7 +320,7 @@
       "label": "false_positive"
     },
     {
-      "code": "161         # by putting a false condition in the WHERE clause.\n162         sql = \"DELETE FROM {} WHERE 0=1 AND 0=%s\".format(Square._meta.db_table)\n163         if params is None:\n",
+      "code": "157\t            cursor.execute(sql, params)\n158\t\n159\t    def call_executemany(self, connection, params=None):\n160\t        # executemany() must use an update query. Make sure it does nothing\n161\t        # by putting a false condition in the WHERE clause.\n162\t        sql = \"DELETE FROM {} WHERE 0=1 AND 0=%s\".format(Square._meta.db_table)\n163\t        if params is None:\n164\t            params = [(i,) for i in range(3)]\n165\t        with connection.cursor() as cursor:\n166\t            cursor.executemany(sql, params)\n167\t\n",
       "col_offset": 14,
       "end_col_offset": 49,
       "filename": "target_django/tests/backends/base/test_base.py",
@@ -341,7 +341,7 @@
       "label": "false_positive"
     },
     {
-      "code": "177         with connection.cursor() as cursor:\n178             query = \"INSERT INTO %s (%s, %s) VALUES (%%s, %%s)\" % (\n179                 connection.introspection.identifier_converter(\"backends_square\"),\n180                 connection.ops.quote_name(\"root\"),\n181                 connection.ops.quote_name(\"square\"),\n182             )\n183             with self.assertRaises(Exception):\n",
+      "code": "173\t        \"\"\"\n174\t        An executemany call with too many/not enough parameters will raise an\n175\t        exception.\n176\t        \"\"\"\n177\t        with connection.cursor() as cursor:\n178\t            query = \"INSERT INTO %s (%s, %s) VALUES (%%s, %%s)\" % (\n179\t                connection.introspection.identifier_converter(\"backends_square\"),\n180\t                connection.ops.quote_name(\"root\"),\n181\t                connection.ops.quote_name(\"square\"),\n182\t            )\n183\t            with self.assertRaises(Exception):\n",
       "col_offset": 20,
       "end_col_offset": 63,
       "filename": "target_django/tests/backends/tests.py",
@@ -366,7 +366,7 @@
       "label": "false_positive"
     },
     {
-      "code": "157         root_column = connection.ops.quote_name(square_opts.get_field(\"root\").column)\n158         sql = f\"UPDATE {table} SET {root_column} = %s + %s WHERE {id_column} = %s\"\n159         with connection.cursor() as cursor:\n",
+      "code": "153\t    def test_last_executed_query_with_duplicate_params(self):\n154\t        square_opts = Square._meta\n155\t        table = connection.introspection.identifier_converter(square_opts.db_table)\n156\t        id_column = connection.ops.quote_name(square_opts.get_field(\"id\").column)\n157\t        root_column = connection.ops.quote_name(square_opts.get_field(\"root\").column)\n158\t        sql = f\"UPDATE {table} SET {root_column} = %s + %s WHERE {id_column} = %s\"\n159\t        with connection.cursor() as cursor:\n160\t            params = [42, 42, 1]\n161\t            cursor.execute(sql, params)\n162\t            last_executed_query = connection.ops.last_executed_query(\n163\t                cursor, sql, params\n",
       "col_offset": 16,
       "end_col_offset": 23,
       "filename": "target_django/tests/backends/tests.py",
@@ -387,7 +387,7 @@
       "label": "false_positive"
     },
     {
-      "code": "203         for select in selects:\n204             query = \"SELECT %s FROM raw_query_author\" % select\n205             authors = Author.objects.all()\n",
+      "code": "199\t            (\"last_name, dob, first_name, id\"),\n200\t            (\"first_name, last_name, dob, id\"),\n201\t        )\n202\t\n203\t        for select in selects:\n204\t            query = \"SELECT %s FROM raw_query_author\" % select\n205\t            authors = Author.objects.all()\n206\t            self.assertSuccessfulRawQuery(Author, query, authors)\n207\t\n208\t    def test_translations(self):\n209\t        \"\"\"\n",
       "col_offset": 20,
       "end_col_offset": 53,
       "filename": "target_django/tests/raw_query/tests.py",
@@ -408,7 +408,7 @@
       "label": "false_positive"
     },
     {
-      "code": "67         self.cursor = self.new_connection.cursor()\n68         sql = \"SELECT * FROM %(db_table)s %(for_update)s;\" % {\n69             \"db_table\": Person._meta.db_table,\n70             \"for_update\": self.new_connection.ops.for_update_sql(),\n71         }\n72         self.cursor.execute(sql, ())\n",
+      "code": "63\t    def start_blocking_transaction(self):\n64\t        self.new_connection.set_autocommit(False)\n65\t        # Start a blocking transaction. At some point,\n66\t        # end_blocking_transaction() should be called.\n67\t        self.cursor = self.new_connection.cursor()\n68\t        sql = \"SELECT * FROM %(db_table)s %(for_update)s;\" % {\n69\t            \"db_table\": Person._meta.db_table,\n70\t            \"for_update\": self.new_connection.ops.for_update_sql(),\n71\t        }\n72\t        self.cursor.execute(sql, ())\n73\t        self.cursor.fetchone()\n",
       "col_offset": 14,
       "end_col_offset": 58,
       "filename": "target_django/tests/select_for_update/tests.py",
@@ -432,7 +432,7 @@
       "label": "false_positive"
     },
     {
-      "code": "216             City.objects.raw(\n217                 \"select id, name, %s as point from geoapp_city\" % point_select\n218             )\n",
+      "code": "212\t        \"Testing raw SQL query.\"\n213\t        cities1 = City.objects.all()\n214\t        point_select = connection.ops.select % \"point\"\n215\t        cities2 = list(\n216\t            City.objects.raw(\n217\t                \"select id, name, %s as point from geoapp_city\" % point_select\n218\t            )\n219\t        )\n220\t        self.assertEqual(len(cities1), len(cities2))\n221\t        with self.assertNumQueries(0):  # Ensure point isn't deferred.\n222\t            self.assertIsInstance(cities2[0].point, Point)\n",
       "col_offset": 16,
       "end_col_offset": 63,
       "filename": "target_django/tests/gis_tests/geoapp/tests.py",
@@ -453,7 +453,7 @@
       "label": "false_positive"
     },
     {
-      "code": "261             cursor.execute(\n262                 \"SELECT {} FROM {};\".format(field_name, model._meta.db_table)\n263             )\n",
+      "code": "257\t        cast_function=None,\n258\t    ):\n259\t        with connection.cursor() as cursor:\n260\t            schema_editor.add_field(model, field)\n261\t            cursor.execute(\n262\t                \"SELECT {} FROM {};\".format(field_name, model._meta.db_table)\n263\t            )\n264\t            database_default = cursor.fetchall()[0][0]\n265\t            if cast_function and type(database_default) is not type(expected_default):\n266\t                database_default = cast_function(database_default)\n267\t            self.assertEqual(database_default, expected_default)\n",
       "col_offset": 16,
       "end_col_offset": 36,
       "filename": "target_django/tests/schema/tests.py",
@@ -474,7 +474,7 @@
       "label": "false_positive"
     },
     {
-      "code": "24         g.db = connect_db()\n25         cur = g.db.execute(\"SELECT * FROM employees WHERE username = '%s' AND password = '%s'\" %(uname, hash_pass(pword)))\n26         if cur.fetchone():\n",
+      "code": "20\t@app.route('/api/v1.0/storeLoginAPI/', methods=['POST'])\n21\tdef loginAPI():\n22\t    if request.method == 'POST':\n23\t        uname,pword = (request.json['username'],request.json['password'])\n24\t        g.db = connect_db()\n25\t        cur = g.db.execute(\"SELECT * FROM employees WHERE username = '%s' AND password = '%s'\" %(uname, hash_pass(pword)))\n26\t        if cur.fetchone():\n27\t            result = {'status': 'success'}\n28\t        else:\n29\t            result = {'status': 'fail'}\n30\t        g.db.close()\n",
       "col_offset": 27,
       "end_col_offset": 94,
       "filename": "target_hackable/main.py",
@@ -495,7 +495,7 @@
       "label": "true_positive"
     },
     {
-      "code": "55     #curs = g.db.execute(\"SELECT * FROM shop_items WHERE name=?\", item) #The safe way to actually get data from db\n56     curs = g.db.execute(\"SELECT * FROM shop_items WHERE name = '%s'\" %item)\n57     results = [dict(name=row[0], quantity=row[1], price=row[2]) for row in curs.fetchall()]\n",
+      "code": "51\t\n52\t@app.route('/api/v1.0/storeAPI/<item>', methods=['GET'])\n53\tdef searchAPI(item):\n54\t    g.db = connect_db()\n55\t    #curs = g.db.execute(\"SELECT * FROM shop_items WHERE name=?\", item) #The safe way to actually get data from db\n56\t    curs = g.db.execute(\"SELECT * FROM shop_items WHERE name = '%s'\" %item)\n57\t    results = [dict(name=row[0], quantity=row[1], price=row[2]) for row in curs.fetchall()]\n58\t    g.db.close()\n59\t    return jsonify(results)\n60\t\n61\t@app.errorhandler(404)\n",
       "col_offset": 24,
       "end_col_offset": 68,
       "filename": "target_hackable/main.py",
@@ -516,7 +516,7 @@
       "label": "true_positive"
     },
     {
-      "code": "88             c.execute('INSERT INTO shop_items VALUES(\"candy\", \"100\", \"10\")')\n89             c.execute('INSERT INTO employees VALUES(\"itsjasonh\", \"{}\")'.format(hash_pass(\"badword\")))\n90             c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n",
+      "code": "84\t            c.execute(\"\"\"CREATE TABLE shop_items(name TEXT, quantitiy TEXT, price TEXT)\"\"\")\n85\t            c.execute(\"\"\"CREATE TABLE employees(username TEXT, password TEXT)\"\"\")\n86\t            c.execute('INSERT INTO shop_items VALUES(\"water\", \"40\", \"100\")')\n87\t            c.execute('INSERT INTO shop_items VALUES(\"juice\", \"40\", \"110\")')\n88\t            c.execute('INSERT INTO shop_items VALUES(\"candy\", \"100\", \"10\")')\n89\t            c.execute('INSERT INTO employees VALUES(\"itsjasonh\", \"{}\")'.format(hash_pass(\"badword\")))\n90\t            c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n91\t            c.execute('INSERT INTO employees VALUES(\"newguy29\", \"{}\")'.format(hash_pass(\"pass123\")))\n92\t            connection.commit()\n93\t            connection.close()\n94\t\n",
       "col_offset": 22,
       "end_col_offset": 71,
       "filename": "target_hackable/main.py",
@@ -537,7 +537,7 @@
       "label": "false_positive"
     },
     {
-      "code": "89             c.execute('INSERT INTO employees VALUES(\"itsjasonh\", \"{}\")'.format(hash_pass(\"badword\")))\n90             c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n91             c.execute('INSERT INTO employees VALUES(\"newguy29\", \"{}\")'.format(hash_pass(\"pass123\")))\n",
+      "code": "85\t            c.execute(\"\"\"CREATE TABLE employees(username TEXT, password TEXT)\"\"\")\n86\t            c.execute('INSERT INTO shop_items VALUES(\"water\", \"40\", \"100\")')\n87\t            c.execute('INSERT INTO shop_items VALUES(\"juice\", \"40\", \"110\")')\n88\t            c.execute('INSERT INTO shop_items VALUES(\"candy\", \"100\", \"10\")')\n89\t            c.execute('INSERT INTO employees VALUES(\"itsjasonh\", \"{}\")'.format(hash_pass(\"badword\")))\n90\t            c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n91\t            c.execute('INSERT INTO employees VALUES(\"newguy29\", \"{}\")'.format(hash_pass(\"pass123\")))\n92\t            connection.commit()\n93\t            connection.close()\n94\t\n95\t    app.run(host='0.0.0.0') # runs on machine ip address to make it visible on netowrk\n",
       "col_offset": 22,
       "end_col_offset": 70,
       "filename": "target_hackable/main.py",
@@ -558,7 +558,7 @@
       "label": "false_positive"
     },
     {
-      "code": "90             c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n91             c.execute('INSERT INTO employees VALUES(\"newguy29\", \"{}\")'.format(hash_pass(\"pass123\")))\n92             connection.commit()\n",
+      "code": "86\t            c.execute('INSERT INTO shop_items VALUES(\"water\", \"40\", \"100\")')\n87\t            c.execute('INSERT INTO shop_items VALUES(\"juice\", \"40\", \"110\")')\n88\t            c.execute('INSERT INTO shop_items VALUES(\"candy\", \"100\", \"10\")')\n89\t            c.execute('INSERT INTO employees VALUES(\"itsjasonh\", \"{}\")'.format(hash_pass(\"badword\")))\n90\t            c.execute('INSERT INTO employees VALUES(\"theeguy9\", \"{}\")'.format(hash_pass(\"badpassword\")))\n91\t            c.execute('INSERT INTO employees VALUES(\"newguy29\", \"{}\")'.format(hash_pass(\"pass123\")))\n92\t            connection.commit()\n93\t            connection.close()\n94\t\n95\t    app.run(host='0.0.0.0') # runs on machine ip address to make it visible on netowrk\n",
       "col_offset": 22,
       "end_col_offset": 70,
       "filename": "target_hackable/main.py",

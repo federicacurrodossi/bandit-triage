@@ -73,7 +73,7 @@ flowchart LR
 `features.py` defines a fixed list of known rule IDs:
 
 ```python
-KNOWN_TEST_IDS = ["B105", "B101", "B602", "B301", "B608", "B614", "B615"]
+KNOWN_TEST_IDS = ["B101", "B105", "B608"]
 ```
 
 This does not mean other rules are rejected. Every finding gets a prediction.
@@ -84,6 +84,14 @@ What changes is how much the model knows:
 * **Rule not in the list:** all rule flags stay at zero, so it falls back to
   generic context signals only. It still answers, but without knowing what kind
   of issue it's looking at, so trust it less.
+
+The three active rules are chosen to cover both shapes of finding. B101
+(`assert`) and B105 (hardcoded password) are rules where the origin of the data
+does not matter: a static signal (`is_test_file`, `secret_score`) settles them.
+B608 (string-built SQL) is an injection rule where origin is everything, and is
+the rule the data-flow work targets. Other flow rules that were partially
+labeled (B301, B602, B614, B615) are archived under `data/archive/` until the
+taint engine covers them, so they are deliberately absent from this list.
 
 The real limit isn't the list, it's the dataset. Adding a rule ID to
 `KNOWN_TEST_IDS` without adding labeled examples achieves nothing: the new flag
@@ -121,7 +129,12 @@ the code do with it.
   CLI, and environment input (`request.`, `input(`, `sys.argv`, form and query
   params) plus cache stores (`redis`, `memcache`), raw sockets (`socket.`,
   `.recv(`), and message queues (`kafka`, `pika.`, `.consume(`). The patterns
-  stay narrow to avoid matching ordinary internal calls.
+  stay narrow to avoid matching ordinary internal calls. Today this is a regex
+  over the flagged snippet, which is its main weakness: it only sees taint
+  inside the few lines Bandit reports. `bandit_triage/taint.py` is the planned
+  replacement, a small intra-procedural taint analysis that works backward from
+  the sink through the function to find where each value actually comes from,
+  so the signal no longer depends on how close the assignment happens to sit.
 * **`has_dynamic_concat`** flags a string built at runtime, an injection risk,
   versus a fixed literal.
 * **`secret_score`** is a gradual score from 0 to 1 for how much a flagged

@@ -32,49 +32,33 @@ def _extract_cwe(item: dict):
     return None, None
 
 
+def _build_finding(item: dict, with_label: bool) -> Finding:
+    cwe_id, cwe_link = _extract_cwe(item)
+    return Finding(
+        filename=item["filename"],
+        code=item.get("code", ""),
+        issue_confidence=item.get("issue_confidence", "MEDIUM"),
+        issue_severity=item.get("issue_severity", "MEDIUM"),
+        issue_text=item.get("issue_text", ""),
+        line_number=item.get("line_number", 0),
+        test_id=item.get("test_id", ""),
+        test_name=item.get("test_name", ""),
+        cwe_id=cwe_id,
+        cwe_link=cwe_link,
+        label=item.get("label") if with_label else None,
+    )
+
+
 def load_bandit_report(path: str) -> List[Finding]:
     """Loads a real Bandit JSON report (has a top-level 'results' list)."""
     data = json.loads(Path(path).read_text())
-    findings = []
-    for item in data.get("results", []):
-        cwe_id, cwe_link = _extract_cwe(item)
-        findings.append(
-            Finding(
-                filename=item["filename"],
-                code=item.get("code", ""),
-                issue_confidence=item.get("issue_confidence", "MEDIUM"),
-                issue_severity=item.get("issue_severity", "MEDIUM"),
-                issue_text=item.get("issue_text", ""),
-                line_number=item.get("line_number", 0),
-                test_id=item.get("test_id", ""),
-                test_name=item.get("test_name", ""),
-                cwe_id=cwe_id,
-                cwe_link=cwe_link,
-            )
-        )
-    return findings
+    return [_build_finding(item, with_label=False)
+            for item in data.get("results", [])]
 
 
 def load_labeled_data(path: str) -> List[Finding]:
-    """Loads our own hand-labeled training data (has a top-level
-    'findings' list, each entry additionally carrying a 'label')."""
+    """Loads our own hand-labeled training data (has a top-level 'findings'
+    list, each entry additionally carrying a 'label')."""
     data = json.loads(Path(path).read_text())
-    findings = []
-    for item in data["findings"]:
-        cwe_id, cwe_link = _extract_cwe(item)
-        findings.append(
-            Finding(
-                filename=item["filename"],
-                code=item.get("code", ""),
-                issue_confidence=item.get("issue_confidence", "MEDIUM"),
-                issue_severity=item.get("issue_severity", "MEDIUM"),
-                issue_text=item.get("issue_text", ""),
-                line_number=item.get("line_number", 0),
-                test_id=item.get("test_id", ""),
-                test_name=item.get("test_name", ""),
-                cwe_id=cwe_id,
-                cwe_link=cwe_link,
-                label=item.get("label"),
-            )
-        )
-    return findings
+    return [_build_finding(item, with_label=True)
+            for item in data["findings"]]

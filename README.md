@@ -32,15 +32,15 @@ has a `venv` or vendored code sitting in the tree, otherwise the report fills up
 with findings from third party code.
 
 ```
-[!!] app/ml/upload_endpoint.py:19  (B614 pytorch_load)
-     bandit says: Use of unsafe torch.load(), can execute arbitrary code via pickle deserialization.
-     reference: CWE-502 (https://cwe.mitre.org/data/definitions/502.html)
+[!!] app/db/queries.py:41  (B608 hardcoded_sql_expressions)
+     bandit says: Possible SQL injection vector through string-based query construction.
+     reference: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
      triage: likely_true_positive (p=0.85)
      top reason: code reads from an external/user-controlled source nearby
 
-[--] app/ml/startup.py:7  (B615 huggingface_unsafe_download)
-     bandit says: Insecure download of Hugging Face model, unpinned revision and trust_remote_code enabled.
-     reference: CWE-494 (https://cwe.mitre.org/data/definitions/494.html)
+[--] app/db/backend.py:88  (B608 hardcoded_sql_expressions)
+     bandit says: Possible SQL injection vector through string-based query construction.
+     reference: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
      triage: likely_false_positive (p=0.18)
      top reason: NOT true that code reads from an external/user-controlled source nearby
 ```
@@ -98,15 +98,23 @@ anywhere else.
 
 ## The dataset
 
-`data/labeled_findings.json` holds hand-labeled findings across 7 Bandit rule
-types: hardcoded passwords, `assert` usage, `subprocess` with `shell=True`,
-`pickle`, string-built SQL, and the two AI/ML supply chain checks (unsafe
-`torch.load()` and insecure Hugging Face downloads, both CWE-502). It grows by
-running Bandit on real open source projects and labeling by hand. B105 and
-B101 are the most developed, with roughly 20 examples each; the rest are still
-filling in.
+`data/labeled_findings.json` holds hand-labeled findings across three Bandit
+rule types, chosen so the project covers the two shapes of finding it needs to
+handle. Two are rules where the origin of the data does not matter, so a static
+signal decides them: `assert` usage (B101, test file vs production) and
+hardcoded passwords (B105, real secret vs placeholder). The third is an
+injection rule where origin is everything: string-built SQL (B608), where the
+same query shape is dangerous with user input and harmless with an internal
+identifier.
 
-`data/sample_bandit_report.json` is a held-out set, never used in training, for
+Other rules that were partially labeled earlier (pickle B301, `subprocess`
+B602, and the AI/ML supply-chain checks B614/B615) are set aside in
+`data/archive/` rather than deleted. They are all flow rules whose findings
+really need the data-flow analysis this project is now building out (see
+`docs/architecture.md`), so they wait there until that engine covers them,
+without losing the labeling work already done.
+
+`heldout/` holds hand-labeled held-out sets, never used in training, for
 checking that the model generalizes past its exact examples.
 
 ## Limitations
@@ -123,13 +131,22 @@ checking that the model generalizes past its exact examples.
   rules fall back to generic context signals, so give those more scrutiny.
   Adding a rule means adding labeled examples, not just listing the ID.
 * The held-out evaluation (see [`docs/evaluation.md`](docs/evaluation.md))
-  makes these concrete. On unseen Django and a vulnerable Flask app the model
-  reaches 84% accuracy, but the errors are informative: it misses true
-  positives when the untrusted input sits a line or two outside the flagged
-  snippet (its taint check is local), and it under-weights genuine SQL
-  injection because most B608 findings it has seen are safe. Because the model
-  is explainable, each error names the feature responsible, which points
-  directly at what to improve.
+  makes these concrete. On unseen findings from Django and a vulnerable Flask
+  app the model reaches around 82% accuracy, and the errors are informative:
+  the current `has_tainted_input` feature is a regex over the flagged snippet,
+  so it misses a real SQL injection whenever the untrusted value is assigned a
+  few lines away from the query, and it under-weights genuine injection because
+  most B608 findings it has seen are safe. Because the model is explainable,
+  each error names the feature responsible, which points directly at what to
+  improve.
+* That limitation is what the data-flow work addresses. Rather than widening
+  the snippet by a fixed amount (an arbitrary, fragile heuristic), the project
+  is adding a small intra-procedural taint analysis (`bandit_triage/taint.py`)
+  that works backward from the sink to the origin of each value, following
+  assignments through the function no matter how far apart they are. This is
+  the boundary Semgrep's free tier also draws; inter-procedural flow across
+  functions and files is left to heavier tools like CodeQL and reported
+  honestly as unknown.
 
 ## Docs
 
@@ -143,35 +160,3 @@ checking that the model generalizes past its exact examples.
 * Bandit's own [plugin listing](https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing),
   used as the reference for dataset construction.
 
-## Repo structure
-
-```
-bandit-triage/
-├── bandit_triage/
-│   ├── loader.py
-│   ├── features.py
-│   ├── classifier.py
-│   └── cli.py
-├── data/
-│   ├── labeled_findings.json     # training data
-│   └── sample_bandit_report.json # held-out test data
-├── docs/
-│   ├── architecture.md
-│   ├── building-the-dataset.md
-│   └── evaluation.md             # held-out evaluation methodology
-├── heldout/                      # hand-labeled held-out test sets
-│   ├── heldout_b101.json
-│   └── heldout_b608.json
-├── b101_spec.txt                 # reproducible spec for the B101 held-out
-├── b608_spec.txt                 # reproducible spec for the B608 held-out
-├── templates/index.html          # web UI markup
-├── static/style.css              # web UI styling
-├── inspect_findings.py           # inspect real Bandit findings by rule
-├── add_to_dataset.py             # add labeled findings to the dataset
-├── dataset_stats.py              # train + write stats and misclassified reports
-├── split_findings_by_rule.py     # split a Bandit report into one file per rule
-├── build_heldout.py              # build a held-out set from a spec and reports
-├── evaluate_heldout.py           # evaluate the model on the held-out sets
-├── web_ui.py
-└── requirements.txt
-```
