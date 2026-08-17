@@ -53,6 +53,39 @@ three steps:
    untrusted source reaches the sink, whether a sanitizer sits on the path, the
    source kind, the path length, and whether the analysis was complete.
 
+## When the source is UNKNOWN
+
+UNKNOWN is not a failure, it is the engine drawing its own boundary honestly.
+The engine is intra-procedural, so whenever a value's origin cannot be settled
+without leaving the function, it stops and reports UNKNOWN rather than guessing.
+This happens in three situations, all of which mean "the answer lies outside
+what this engine promises to analyze":
+
+1. **A value from a call the engine does not follow.** When a variable is
+   assigned from a plain function call that is not a known sanitizer, such as
+   `v = compute_something(x)`, the engine does not descend into
+   `compute_something`: that is inter-procedural, the territory left to heavier
+   tools. The origin is marked UNKNOWN and the analysis is flagged incomplete.
+
+2. **A name with no assignment in the function that is not a route parameter.**
+   If a variable is never assigned inside the function and is not bound from a
+   route (so it is an ordinary parameter passed by some caller, or a module
+   global), its value arrives from outside the function. The engine cannot see
+   that far, so it reports UNKNOWN.
+
+3. **A value the engine cannot decompose into names to follow.** If the right
+   hand side is neither a recognized source, nor a constant, nor a sanitizer,
+   nor something built out of other local variables (for example an attribute
+   access on an object the engine knows nothing about), there is nothing left
+   to trace, and the origin stays UNKNOWN.
+
+The distinction matters for how the result is read. UNKNOWN is different from
+CONSTANT (proven safe) and different from an untrusted SOURCE (proven
+attacker-reachable). It is an explicit "not determined within the function",
+which is exactly the honest signal an inter-procedural case should produce, and
+it is why `TaintResult.analysis_complete` is set to False whenever an UNKNOWN
+node appears in the tree.
+
 ## What it does not do
 
 The engine does not give the final true or false verdict. It produces a
@@ -75,9 +108,9 @@ own control rather than delegated to a heavyweight engine.
   PARAM, SINK).
 * `DepNode`: one node of the dependency tree, rooted at the sink. Kept a tree,
   not a shared graph, so it stays easy to walk and to render as an explanation.
-* `RuleConfig`: per-rule sanitizers (sources are shared across all injection
-  rules). Extending from B608 to B602/B603/B703 means adding a config, not
-  changing the analysis.
+* `RuleConfig`: per-rule sink names and sanitizers (sources are shared across
+  all injection rules). Extending from B608 to B602/B603/B703 means adding a
+  config, not changing the analysis.
 * `TaintResult`: the engine's output; `likely_exploitable` is true when
   untrusted data reaches the sink with nothing cleaning it on the way.
 

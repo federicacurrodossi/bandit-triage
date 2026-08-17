@@ -65,6 +65,7 @@ class NodeKind(Enum):
     CONSTANT = "constant"     # a literal value
     PARAM = "param"           # a function parameter
     SINK = "sink"             # the flagged expression itself (tree root)
+    UNKNOWN = "unknown"       # an origin the walk could not follow
 
 
 @dataclass
@@ -105,6 +106,7 @@ class RuleConfig:
     the engine.
     """
     rule_id: str                                # e.g. "B608"
+    sink_names: Set[str] = field(default_factory=set)   # call names that are sinks
     sanitizers: Set[str] = field(default_factory=set)   # call names that clean data
     # for SQL, a parameterized query (execute(sql, params)) is safe regardless of
     # how sql was built; other families leave this False
@@ -350,3 +352,166 @@ def is_route_param(function_code: str, var_name: str) -> bool:
                 if f":{var_name}>" in pattern:
                     return True
     return False
+
+
+# ---------------------------------------------------------------------------
+# The engine: putting the primitives in order
+#
+# Given a finding (the enclosing function plus the flagged sink line), the
+# engine walks backward from the variables in the sink to their origins,
+# following assignment chains through the function (backward slicing), and
+# produces a TaintResult. It stays intra-procedural: a value produced by a call
+# the engine does not recognize is left UNKNOWN and the analysis is flagged
+# incomplete, rather than guessed.
+# ---------------------------------------------------------------------------
+
+
+def _names_to_follow(rhs_code: str) -> Set[str]:
+    """The variable names in an expression that the walk should trace further.
+
+    For a name or a composition of names (concatenation, %, f-string), these are
+    the names themselves. For a bare unknown call the caller stops instead, so
+    this is only used on expressions the walk is willing to look through.
+    """
+    try:
+        tree = ast.parse(rhs_code, mode="eval")
+    except SyntaxError:
+        return set()
+    return {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+
+
+def _rhs_is_plain_call(rhs_code: str) -> bool:
+    """True when the whole right hand side is a single call, like helper(a, b).
+    Such a call is inter-procedural: the engine does not follow into it."""
+    try:
+        body = ast.parse(rhs_code, mode="eval").body
+    except SyntaxError:
+        return False
+    return isinstance(body, ast.Call)
+
+
+def _trace_variable(var_name: str,
+                    function_code: str,
+                    config: Optional[RuleConfig],
+                    visited: Set[str],
+                    line: int = 0) -> DepNode:
+    """Trace one variable back to its origin, returning a DepNode subtree.
+
+    The walk stops at an untrusted source, a constant, a route parameter, or
+    something it does not follow (an unknown call, a global). Sanitizer calls
+    are recorded and the walk continues through what they wrap.
+    """
+    # Guard against loops (x = x, or mutual chains).
+    if var_name in visited:
+        return DepNode(label=var_name, kind=NodeKind.UNKNOWN, line=line)
+    visited = visited | {var_name}
+
+    # A view parameter bound from the URL: untrusted, and a natural stopping point.
+    if is_route_param(function_code, var_name):
+        node = DepNode(label=var_name, kind=NodeKind.SOURCE, line=line,
+                       source_type=SourceType.ROUTE_PARAM)
+        return node
+
+    rhs = last_assignment_of(function_code, var_name)
+    if rhs is None:
+        # Not assigned and not a route parameter: a plain parameter or a global.
+        # Honestly unknown (its value may arrive from another function).
+        return DepNode(label=var_name, kind=NodeKind.UNKNOWN, line=line)
+
+    info = classify_origin(rhs, config)
+
+    # An untrusted or constant leaf: the origin is settled here.
+    if info.source_type in (SourceType.REQUEST, SourceType.INPUT):
+        node = DepNode(label=var_name, kind=NodeKind.VARIABLE, line=line)
+        node.add_child(DepNode(label=rhs, kind=NodeKind.SOURCE,
+                               source_type=info.source_type))
+        return node
+    if info.source_type == SourceType.CONSTANT:
+        node = DepNode(label=var_name, kind=NodeKind.VARIABLE, line=line)
+        node.add_child(DepNode(label=rhs, kind=NodeKind.CONSTANT,
+                               source_type=SourceType.CONSTANT))
+        return node
+
+    # A sanitizer call: record it, then look through it at what it wraps.
+    if info.is_sanitizer:
+        node = DepNode(label=var_name, kind=NodeKind.SANITIZER, line=line,
+                       sanitizer_name=info.sanitizer_name)
+        for inner in _names_to_follow(rhs):
+            node.add_child(_trace_variable(inner, function_code, config, visited))
+        if not node.children:
+            # sanitizer wrapping only a literal: a constant, and safe
+            node.add_child(DepNode(label=rhs, kind=NodeKind.CONSTANT,
+                                   source_type=SourceType.CONSTANT))
+        return node
+
+    # An unknown plain call, like helper(...): inter-procedural, do not follow.
+    if _rhs_is_plain_call(rhs):
+        return DepNode(label=var_name, kind=NodeKind.UNKNOWN, line=line)
+
+    # Otherwise the value is built from other names (concatenation, %, f-string):
+    # follow each of them (this is the backward slicing chain).
+    node = DepNode(label=var_name, kind=NodeKind.VARIABLE, line=line)
+    followed = False
+    for inner in _names_to_follow(rhs):
+        if inner == var_name:
+            continue
+        node.add_child(_trace_variable(inner, function_code, config, visited))
+        followed = True
+    if not followed:
+        return DepNode(label=var_name, kind=NodeKind.UNKNOWN, line=line)
+    return node
+
+
+def analyze(function_code: str,
+            sink_code: str,
+            config: RuleConfig) -> TaintResult:
+    """Run the engine on one finding.
+
+    function_code: the source of the function that contains the finding.
+    sink_code:     the flagged line (the sink expression).
+    config:        the rule's configuration (its sink names and sanitizers).
+
+    Returns a TaintResult summarizing whether untrusted data reaches the sink,
+    whether a sanitizer lies on the path, and whether the analysis was complete.
+    """
+    root = DepNode(label="sink", kind=NodeKind.SINK)
+    sink_vars = variables_in_sink(sink_code, config.sink_names)
+    for var in sink_vars:
+        root.add_child(_trace_variable(var, function_code, config, visited=set()))
+
+    # Aggregate the tree into a verdict.
+    untrusted_type = None
+    has_sanitizer = False
+    saw_unknown = False
+    for node in root.walk():
+        if node.kind == NodeKind.SOURCE and node.source_type is not None \
+                and node.source_type.is_untrusted:
+            untrusted_type = untrusted_type or node.source_type
+        if node.kind == NodeKind.SANITIZER:
+            has_sanitizer = True
+        if node.kind == NodeKind.UNKNOWN:
+            saw_unknown = True
+
+    is_tainted = untrusted_type is not None
+    if untrusted_type is not None:
+        source_type = untrusted_type
+    elif saw_unknown:
+        source_type = SourceType.UNKNOWN
+    else:
+        source_type = SourceType.CONSTANT
+
+    # path_length: longest depth from the sink down to a node, as a rough measure
+    # of how far the value travelled.
+    def depth(node: DepNode) -> int:
+        if not node.children:
+            return 0
+        return 1 + max(depth(c) for c in node.children)
+
+    return TaintResult(
+        is_tainted=is_tainted,
+        has_sanitizer=has_sanitizer,
+        source_type=source_type,
+        path_length=depth(root),
+        analysis_complete=not saw_unknown,
+        tree=root,
+    )

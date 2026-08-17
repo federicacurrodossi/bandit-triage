@@ -11,6 +11,7 @@ from bandit_triage.taint import (
     is_route_param,
     RuleConfig,
     SourceType,
+    analyze,
 )
 
 
@@ -186,3 +187,93 @@ def f(item):
     return item
 '''
         assert is_route_param(code, "other") is False
+
+
+# Full B608 configuration used by the end-to-end engine tests.
+B608 = RuleConfig(
+    rule_id="B608",
+    sink_names={"execute", "executemany", "executescript", "raw"},
+    sanitizers={"quote_name", "quote", "escape", "escape_string", "int"},
+)
+
+
+class TestAnalyze:
+    """The whole engine: from a finding to a TaintResult (backward slicing)."""
+
+    def test_real_injection_route_param(self):
+        # main.py:56: item from the route reaches the query, nothing cleans it.
+        func = '''
+@app.route('/api/v1.0/storeAPI/<item>', methods=['GET'])
+def searchAPI(item):
+    g.db = connect_db()
+    curs = g.db.execute("SELECT * FROM shop_items WHERE name = '%s'" % item)
+'''
+        sink = "curs = g.db.execute(\"SELECT ... '%s'\" % item)"
+        r = analyze(func, sink, B608)
+        assert r.is_tainted
+        assert r.source_type == SourceType.ROUTE_PARAM
+        assert r.likely_exploitable
+
+    def test_static_template_safe(self):
+        # cache_key comes from quote_name on a literal: not exploitable.
+        func = '''
+def cache_key_culling_sql(self):
+    cache_key = self.quote_name("cache_key")
+    return "x"
+'''
+        sink = 'curs = db.execute(f"SELECT {cache_key} FROM t")'
+        r = analyze(func, sink, B608)
+        assert not r.is_tainted
+        assert not r.likely_exploitable
+        assert r.has_sanitizer
+
+    def test_backward_slicing_chain(self):
+        # y = x = request: the walk follows the chain to the source.
+        func = '''
+def handler():
+    x = request.args["q"]
+    y = x
+    cursor.execute("SELECT * FROM t WHERE a = '" + y + "'")
+'''
+        sink = "cursor.execute(\"SELECT * FROM t WHERE a = '\" + y + \"'\")"
+        r = analyze(func, sink, B608)
+        assert r.is_tainted
+        assert r.source_type == SourceType.REQUEST
+        assert r.likely_exploitable
+
+    def test_sanitized_request_not_exploitable(self):
+        # request input passed through escape() before the sink.
+        func = '''
+def handler():
+    raw = request.args["q"]
+    safe = escape(raw)
+    cursor.execute("SELECT * FROM t WHERE a = '" + safe + "'")
+'''
+        sink = "cursor.execute(\"SELECT * FROM t WHERE a = '\" + safe + \"'\")"
+        r = analyze(func, sink, B608)
+        assert r.is_tainted            # the origin is still request
+        assert r.has_sanitizer         # but escape sits on the path
+        assert not r.likely_exploitable
+
+    def test_constant_only(self):
+        func = '''
+def f():
+    name = "admin"
+    cursor.execute("SELECT * FROM users WHERE name = '" + name + "'")
+'''
+        sink = "cursor.execute(\"SELECT ... '\" + name + \"'\")"
+        r = analyze(func, sink, B608)
+        assert not r.is_tainted
+        assert r.source_type == SourceType.CONSTANT
+
+    def test_unknown_call_marks_incomplete(self):
+        # value from a helper the engine does not follow: honest UNKNOWN.
+        func = '''
+def f():
+    v = compute_something(42)
+    cursor.execute("SELECT ... " + v)
+'''
+        sink = "cursor.execute(\"SELECT ... \" + v)"
+        r = analyze(func, sink, B608)
+        assert not r.analysis_complete
+        assert r.source_type == SourceType.UNKNOWN
