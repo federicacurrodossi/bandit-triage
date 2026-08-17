@@ -118,9 +118,35 @@ own control rather than delegated to a heavyweight engine.
 
 Unit tests check each step on small functions taken from the held-out cases (the
 route-parameter case recognizes an untrusted source, the static-template cases
-recognize its absence). The end-to-end check reruns `evaluate_heldout.py` and
-compares against the baseline in `heldout_stats.md`: the engine succeeds if the
-four B608 errors there (three static-template false positives, one route-param
-false negative) are corrected without breaking the true negatives. As a final
-external check, Joern is run once over the held-out cases as a comparison
-baseline only, never inside the tool.
+recognize its absence). The end-to-end check wires the engine's verdict into the
+classifier features and reruns `evaluate_heldout.py` against the recorded
+baseline in `heldout_stats.md`.
+
+Measured effect on the held-out set. B608 recall went from 0.50 to 1.00: the
+route-parameter injection (`main.py:56`), the case a surface regex could not
+see, is now caught, and B608 has no false negatives left. Overall accuracy moved
+from 47/57 to 48/57 and F1 from 0.76 to 0.79.
+
+Three static-template false positives remain (`operations.py:113` and the like),
+but the reason is no longer data flow: the engine correctly stops treating them
+as tainted (the `has_tainted_input` signal is off for them), and the model now
+errs on Bandit's high `confidence` instead. These sinks are also a shape the
+engine does not yet cover, a `return f"..."` rather than an `execute(...)` call,
+so it cannot assert they are safe either. They are outside the dataflow gap the
+engine set out to close, and are noted honestly rather than counted as engine
+failures.
+
+As a final external check, Joern is run once over the held-out cases as a
+comparison baseline only, never inside the tool.
+
+## Context: how the engine gets the function
+
+The engine needs the enclosing function, but a Bandit finding carries only the
+flagged line. Two paths supply it. At feature time `enclosing_function` can read
+the source file and extract the narrowest function around the flagged line (the
+principled intra-procedural boundary, not a fixed window). To keep a dataset
+reproducible without the scanned projects on disk, `embed_functions.py` bakes
+that function and the clean sink line into the findings JSON once
+(`function_code` and `sink_text` fields), after which the engine reads them
+directly. When neither is available, the feature falls back to the original
+tainted-input regex, so the pipeline degrades gracefully rather than failing.

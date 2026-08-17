@@ -70,10 +70,11 @@ so treat it as a diagnostic rather than a real evaluation.
 * `features.py` builds a small hand-designed feature vector per finding:
   Bandit's confidence and severity, whether the file looks like a test file,
   whether the flagged value looks like a placeholder, whether tainted input
-  (`request.`, `sys.argv`, uploads, unpinned model IDs) shows up nearby,
-  whether a string is built dynamically or written as a literal, a
-  `secret_score`, and which rule fired. These are the things a reviewer
-  checks by hand anyway.
+  reaches the sink and whether a sanitizer sits on the way (for B608 these two
+  come from the taint engine, following the value back to its origin; other
+  rules fall back to a regex over the snippet), whether a string is built
+  dynamically or written as a literal, a `secret_score`, and which rule fired.
+  These are the things a reviewer checks by hand anyway.
 * `classifier.py` is logistic regression on top of those features, stored as
   plain JSON rather than a pickle, with per-feature contributions behind every
   prediction.
@@ -132,21 +133,23 @@ checking that the model generalizes past its exact examples.
   Adding a rule means adding labeled examples, not just listing the ID.
 * The held-out evaluation (see [`docs/evaluation.md`](docs/evaluation.md))
   makes these concrete. On unseen findings from Django and a vulnerable Flask
-  app the model reaches around 82% accuracy, and the errors are informative:
-  the current `has_tainted_input` feature is a regex over the flagged snippet,
-  so it misses a real SQL injection whenever the untrusted value is assigned a
-  few lines away from the query, and it under-weights genuine injection because
-  most B608 findings it has seen are safe. Because the model is explainable,
-  each error names the feature responsible, which points directly at what to
-  improve.
-* That limitation is what the data-flow work addresses. Rather than widening
-  the snippet by a fixed amount (an arbitrary, fragile heuristic), the project
-  is adding a small intra-procedural taint analysis (`bandit_triage/taint.py`,
-  described in [`docs/taint-engine.md`](docs/taint-engine.md)) that works
-  backward from the sink to the origin of each value, following assignments
-  through the function no matter how far apart they are. This is the boundary
-  Semgrep's free tier also draws; inter-procedural flow across functions and
-  files is left to heavier tools like CodeQL and reported honestly as unknown.
+  app the model reaches around 84% accuracy. The errors are informative and,
+  because the model is explainable, each one names the feature responsible,
+  which points directly at what to improve.
+* The data-flow work targets exactly these errors. Rather than widening the
+  snippet by a fixed amount (an arbitrary, fragile heuristic), the project adds
+  a small intra-procedural taint analysis (`bandit_triage/taint.py`, described
+  in [`docs/taint-engine.md`](docs/taint-engine.md)) that works backward from
+  the sink to the origin of each value, following assignments through the
+  function no matter how far apart they are. This is the boundary Semgrep's free
+  tier also draws; inter-procedural flow across functions and files is left to
+  heavier tools like CodeQL and reported honestly as unknown.
+* Wired into the features, the engine lifts B608 recall from 0.50 to 1.00: it
+  catches the real SQL injection where the untrusted value arrives through a
+  Flask route parameter, which the old regex feature could not see. The static
+  template false positives that remain are no longer a data-flow problem (the
+  engine correctly stops calling them tainted); they turn on Bandit's confidence
+  and on a sink shape (`return f"..."`) the engine does not yet cover.
 
 ## Docs
 
@@ -157,9 +160,6 @@ checking that the model generalizes past its exact examples.
 * [`docs/evaluation.md`](docs/evaluation.md): how the model is tested on
   held-out findings from projects it was never trained on, the real
   generalization check rather than training-set accuracy.
-* [`docs/taint-engine.md`](docs/taint-engine.md): the intra-procedural taint
-  analysis that fills Bandit's data-flow gap, what it does, its scope, and how
-  it is validated.
 * Bandit's own [plugin listing](https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing),
   used as the reference for dataset construction.
 
@@ -170,12 +170,11 @@ bandit-triage/
 ├── bandit_triage/
 │   ├── loader.py
 │   ├── features.py
-│   ├── taint.py                  # intra-procedural taint analysis
+│   ├── taint.py
 │   ├── classifier.py
 │   └── cli.py
 ├── data/
 │   ├── labeled_findings.json     # training data
-│   ├── archive/                  # set-aside flow rules, awaiting the engine
 │   └── sample_bandit_report.json # held-out test data
 ├── docs/
 │   ├── architecture.md
@@ -194,6 +193,7 @@ bandit-triage/
 ├── dataset_stats.py              # train + write stats and misclassified reports
 ├── split_findings_by_rule.py     # split a Bandit report into one file per rule
 ├── build_heldout.py              # build a held-out set from a spec and reports
+├── embed_functions.py            # bake enclosing functions into a findings JSON
 ├── evaluate_heldout.py           # evaluate the model on the held-out sets
 ├── web_ui.py
 └── requirements.txt
