@@ -19,7 +19,7 @@ from flask import Flask, render_template, request
 from bandit_triage.classifier import TriageClassifier
 from bandit_triage.features import extract_features
 from bandit_triage.loader import Finding, _extract_cwe
-from bandit_triage.cli import describe_contribution
+from bandit_triage.cli import describe_contribution, pick_top_reason
 
 app = Flask(__name__)
 
@@ -47,13 +47,15 @@ def triage_report(report_data: dict):
                 test_name=item.get("test_name", ""),
                 cwe_id=cwe_id,
                 cwe_link=cwe_link,
+                function_code=item.get("function_code"),
+                sink_text=item.get("sink_text"),
             )
         )
 
     scored = []
     for f in findings:
         pred = model.predict(extract_features(f))
-        top = pred.contributions[0] if pred.label == "likely_true_positive" else pred.contributions[-1]
+        top = pick_top_reason(f, pred)
         scored.append({
             "filename": f.filename,
             "line_number": f.line_number,

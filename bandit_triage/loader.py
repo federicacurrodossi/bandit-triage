@@ -29,11 +29,33 @@ class Finding:
     sink_text: Optional[str] = None      # the flagged line, clean (no line no.)
 
 
+# Bandit's own rule -> CWE mapping, used as a fallback when a finding carries no
+# issue_cwe field (older Bandit versions, before the mapping was added, omit it,
+# and some hand-written sample findings do too). Numbers match Bandit's plugins.
+_RULE_CWE = {
+    "B101": 703,   # assert_used
+    "B105": 259,   # hardcoded_password_string
+    "B106": 259,
+    "B107": 259,
+    "B301": 502,   # pickle
+    "B602": 78,    # subprocess with shell=True
+    "B603": 78,
+    "B608": 89,    # hardcoded_sql_expressions
+    "B614": 502,   # pytorch load
+    "B615": 494,   # huggingface unsafe download
+}
+
+
 def _extract_cwe(item: dict):
-    """Bandit's real JSON nests CWE info as issue_cwe: {id, link}."""
+    """Bandit's real JSON nests CWE info as issue_cwe: {id, link}. When that
+    field is absent, fall back to the rule's known CWE so the reference still
+    shows."""
     cwe = item.get("issue_cwe")
-    if isinstance(cwe, dict):
+    if isinstance(cwe, dict) and cwe.get("id") is not None:
         return cwe.get("id"), cwe.get("link")
+    rule_cwe = _RULE_CWE.get(item.get("test_id"))
+    if rule_cwe is not None:
+        return rule_cwe, f"https://cwe.mitre.org/data/definitions/{rule_cwe}.html"
     return None, None
 
 

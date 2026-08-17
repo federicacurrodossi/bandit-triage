@@ -37,17 +37,44 @@ python3 -m bandit_triage.cli triage bandit_results.json --model model.json
 Point Bandit at a specific package rather than `.` if the tree has a `venv` or
 vendored code, otherwise the report fills with third-party findings.
 
-```
-[!!] app/db/queries.py:41  (B608 hardcoded_sql_expressions)
-     bandit says: Possible SQL injection vector through string-based query construction.
-     reference: CWE-89
-     triage: likely_true_positive (p=0.85)
-     top reason: code reads from an external/user-controlled source nearby
+Take two B608 findings from the held-out set. Bandit reports both identically
+(MEDIUM severity, MEDIUM confidence), but they are opposites.
 
-[--] app/db/backend.py:88  (B608 hardcoded_sql_expressions)
-     triage: likely_false_positive (p=0.18)
-     top reason: NOT true that code reads from an external/user-controlled source nearby
+A real injection, from a keylogger backend, where `device_id` comes straight
+from the request:
+
+```python
+@app.route("/fetch")
+def fetch_data():
+    device_id = str(request.args.get("device_id"))          # untrusted
+    data = execute(f"SELECT * FROM keystrokes where device_id='{device_id}'")
 ```
+
+A safe query, from Django's cache backend, where the interpolated value is an
+internal table name run through `quote_name`, never user input:
+
+```python
+def clear(self):
+    table = connection.ops.quote_name(self._table)          # internal identifier
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM %s" % table)
+```
+
+The tool tells them apart:
+
+```
+[!!] keylogger/app.py:46  (B608 hardcoded_sql_expressions)
+     triage: likely_true_positive (p=0.93)
+     top reason: untrusted input (request, route parameter, user input) reaches this line (raises priority, contribution=+3.559)
+
+[--] django/core/cache/backends/db.py:302  (B608 hardcoded_sql_expressions)
+     triage: likely_false_positive (p=0.43)
+     top reason: no untrusted input reaches this line (the value is internal or constant) (lowers priority, contribution=-0.395)
+```
+
+The taint engine follows `device_id` back to `request.args` in the first case
+(untrusted, so likely real), but finds only an internal constant in the second,
+which is exactly the reason each finding is ranked the way it is.
 
 ## Running it
 

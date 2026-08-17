@@ -18,14 +18,24 @@ from .loader import load_bandit_report
 FEATURE_DESCRIPTIONS = {
     "confidence": "Bandit's own confidence level",
     "severity": "Bandit's own severity level",
-    "is_test_file": "file path looks like a test file",
+    "is_test_file": "the finding is in a test file",
     "has_dummy_keyword": "code contains a placeholder-like word (test/dummy/fake/changeme/...)",
-    "has_tainted_input": "code reads from an external/user-controlled source nearby",
-    "has_dynamic_concat": "code builds a string dynamically (concatenation/f-string/.format) rather than using a static literal",
+    "has_tainted_input": "untrusted input (request, route parameter, user input) reaches this line",
+    "has_sanitizer": "the value passes through a sanitizer before the sink",
+    "has_dynamic_concat": "the string is built dynamically (concatenation/f-string/.format), not a static literal",
     "secret_score": "the flagged value looks like a real secret (long and mixes character types)",
 }
 for _tid in ["B105", "B101", "B602", "B301", "B608", "B614", "B615"]:
     FEATURE_DESCRIPTIONS[f"rule_{_tid}"] = f"this is a {_tid} finding"
+
+# Phrasings for a signal being absent, clearer than a blanket "NOT true that ...".
+FEATURE_ABSENT_DESCRIPTIONS = {
+    "is_test_file": "the finding is not in a test file",
+    "has_tainted_input": "no untrusted input reaches this line (the value is internal or constant)",
+    "has_sanitizer": "no sanitizer is applied",
+    "has_dummy_keyword": "the code has no placeholder-like keyword",
+    "has_dynamic_concat": "the string is a static literal, not built dynamically",
+}
 
 
 def describe_contribution(c: dict) -> str:
@@ -37,7 +47,36 @@ def describe_contribution(c: dict) -> str:
     if name == "secret_score":
         # gradual 0..1 value: describe as high vs low, not present/absent
         return desc if present else "the flagged value looks more like a placeholder than a real secret"
-    return desc if present else f"NOT true that {desc}"
+    if present:
+        return desc
+    return FEATURE_ABSENT_DESCRIPTIONS.get(name, f"NOT true that {desc}")
+
+
+# Rules where the deciding question is data flow: did untrusted input reach the
+# sink? For these, the absence of tainted input is the real reason a finding is
+# a false positive, even when its standardized contribution is not the single
+# largest, so it is surfaced directly rather than letting a rule flag stand in.
+_INJECTION_RULES = {"B608", "B602", "B603", "B701", "B703"}
+
+
+def pick_top_reason(finding, pred) -> dict:
+    """Choose the contribution to show as the headline reason.
+
+    Normally the most decisive contribution (most positive for a true positive,
+    most negative for a false positive). But for an injection finding judged a
+    false positive, if the taint engine found no untrusted input reaching the
+    sink, that is the substantive reason, so it is preferred over an incidental
+    rule-flag contribution.
+    """
+    by_name = {c["feature"]: c for c in pred.contributions}
+    if (pred.label == "likely_false_positive"
+            and finding.test_id in _INJECTION_RULES):
+        taint = by_name.get("has_tainted_input")
+        if taint is not None and taint["raw_value"] < 0.5:
+            return taint
+    if pred.label == "likely_true_positive":
+        return pred.contributions[0]
+    return pred.contributions[-1]
 
 
 def triage(report_path: str, model_path: str):
@@ -76,10 +115,7 @@ def triage(report_path: str, model_path: str):
         if f.cwe_id:
             print(f"     reference: CWE-{f.cwe_id} ({f.cwe_link})")
         print(f"     triage: {pred.label} (p={pred.true_positive_probability:.2f})")
-        if pred.label == "likely_true_positive":
-            top = pred.contributions[0]  # most positive contribution
-        else:
-            top = pred.contributions[-1]  # most negative contribution
+        top = pick_top_reason(f, pred)
         direction = "raises" if top["contribution"] > 0 else "lowers"
         print(f"     top reason: {describe_contribution(top)} ({direction} priority, contribution={top['contribution']:+.3f})")
         print()
