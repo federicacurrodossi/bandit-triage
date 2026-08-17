@@ -141,12 +141,12 @@ checking that the model generalizes past its exact examples.
   improve.
 * That limitation is what the data-flow work addresses. Rather than widening
   the snippet by a fixed amount (an arbitrary, fragile heuristic), the project
-  is adding a small intra-procedural taint analysis (`bandit_triage/taint.py`)
-  that works backward from the sink to the origin of each value, following
-  assignments through the function no matter how far apart they are. This is
-  the boundary Semgrep's free tier also draws; inter-procedural flow across
-  functions and files is left to heavier tools like CodeQL and reported
-  honestly as unknown.
+  is adding a small intra-procedural taint analysis (`bandit_triage/taint.py`,
+  described in [`docs/taint-engine.md`](docs/taint-engine.md)) that works
+  backward from the sink to the origin of each value, following assignments
+  through the function no matter how far apart they are. This is the boundary
+  Semgrep's free tier also draws; inter-procedural flow across functions and
+  files is left to heavier tools like CodeQL and reported honestly as unknown.
 
 ## Docs
 
@@ -157,6 +157,44 @@ checking that the model generalizes past its exact examples.
 * [`docs/evaluation.md`](docs/evaluation.md): how the model is tested on
   held-out findings from projects it was never trained on, the real
   generalization check rather than training-set accuracy.
+* [`docs/taint-engine.md`](docs/taint-engine.md): the intra-procedural taint
+  analysis that fills Bandit's data-flow gap, what it does, its scope, and how
+  it is validated.
 * Bandit's own [plugin listing](https://bandit.readthedocs.io/en/latest/plugins/index.html#complete-test-plugin-listing),
   used as the reference for dataset construction.
 
+## Repo structure
+
+```
+bandit-triage/
+├── bandit_triage/
+│   ├── loader.py
+│   ├── features.py
+│   ├── taint.py                  # intra-procedural taint analysis
+│   ├── classifier.py
+│   └── cli.py
+├── data/
+│   ├── labeled_findings.json     # training data
+│   ├── archive/                  # set-aside flow rules, awaiting the engine
+│   └── sample_bandit_report.json # held-out test data
+├── docs/
+│   ├── architecture.md
+│   ├── building-the-dataset.md
+│   ├── evaluation.md             # held-out evaluation methodology
+│   └── taint-engine.md           # taint engine design and validation
+├── heldout/                      # hand-labeled held-out test sets
+│   ├── heldout_b101.json
+│   └── heldout_b608.json
+├── b101_spec.txt                 # reproducible spec for the B101 held-out
+├── b608_spec.txt                 # reproducible spec for the B608 held-out
+├── templates/index.html          # web UI markup
+├── static/style.css              # web UI styling
+├── inspect_findings.py           # inspect real Bandit findings by rule
+├── add_to_dataset.py             # add labeled findings to the dataset
+├── dataset_stats.py              # train + write stats and misclassified reports
+├── split_findings_by_rule.py     # split a Bandit report into one file per rule
+├── build_heldout.py              # build a held-out set from a spec and reports
+├── evaluate_heldout.py           # evaluate the model on the held-out sets
+├── web_ui.py
+└── requirements.txt
+```
