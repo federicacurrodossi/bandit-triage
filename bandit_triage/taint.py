@@ -187,3 +187,35 @@ def variables_in_sink(code: str, sink_names: Set[str]) -> Set[str]:
                     if isinstance(sub, ast.Name):
                         names.add(sub.id)
     return names
+
+
+def last_assignment_of(function_code: str, var_name: str) -> Optional[str]:
+    """Primitive 2: where a value is born.
+
+    Given the source of a function and a variable name, find the last place in
+    that function where the variable is assigned, and return the right hand
+    side of that assignment as text (for example "self.quote_name('cache_key')").
+
+    "Last" matters: if a variable is assigned more than once, the value that
+    reaches the sink is the most recent one, so later assignments win over
+    earlier ones.
+
+    Returns None when the variable is never assigned in the function. That is
+    not a failure: it usually means the variable is a function parameter (see
+    primitive 3, which decides whether that parameter is bound from an untrusted
+    route) or a name defined outside the function.
+    """
+    try:
+        tree = ast.parse(function_code.strip())
+    except SyntaxError:
+        return None
+
+    last: Optional[ast.Assign] = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == var_name:
+                    last = node
+    if last is None:
+        return None
+    return ast.unparse(last.value)

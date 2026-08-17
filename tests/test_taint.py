@@ -4,7 +4,7 @@ Each primitive is checked on small functions taken from the held-out cases, so
 the tests exercise the same code the end-to-end evaluation runs on. See
 docs/taint-engine.md for what each primitive is meant to do.
 """
-from bandit_triage.taint import variables_in_sink
+from bandit_triage.taint import variables_in_sink, last_assignment_of
 
 
 # Call names that count as SQL sinks for B608.
@@ -59,3 +59,46 @@ class TestVariablesInSink:
     def test_two_variables(self):
         code = "cursor.execute(\"SELECT * FROM t WHERE a = %s AND b = %s\" % (a, b))"
         assert variables_in_sink(code, SQL_SINKS) == {"a", "b"}
+
+
+class TestLastAssignmentOf:
+    """Primitive 2: where a value is born."""
+
+    def test_static_template_case(self):
+        # operations.py:113: cache_key is assigned from a call on a literal.
+        code = '''
+def cache_key_culling_sql(self):
+    cache_key = self.quote_name("cache_key")
+    return f"SELECT {cache_key} FROM x"
+'''
+        assert last_assignment_of(code, "cache_key") == "self.quote_name('cache_key')"
+
+    def test_route_param_returns_none(self):
+        # main.py:56: item is never assigned, it is a parameter. None is correct.
+        code = '''
+def searchAPI(item):
+    g.db = connect_db()
+    curs = g.db.execute("SELECT * FROM t WHERE name = '%s'" % item)
+'''
+        assert last_assignment_of(code, "item") is None
+
+    def test_last_assignment_wins(self):
+        # When a variable is reassigned, the most recent value reaches the sink.
+        code = '''
+def f():
+    x = "safe"
+    x = request.args["q"]
+    cursor.execute("SELECT ... " + x)
+'''
+        assert last_assignment_of(code, "x") == 'request.args[\'q\']'
+
+    def test_variable_not_present(self):
+        code = '''
+def f():
+    y = 1
+    return y
+'''
+        assert last_assignment_of(code, "z") is None
+
+    def test_syntax_error_is_safe(self):
+        assert last_assignment_of("def broken(", "x") is None
