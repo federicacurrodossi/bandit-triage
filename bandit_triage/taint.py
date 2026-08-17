@@ -130,3 +130,60 @@ class TaintResult:
         """Untrusted data reaching the sink with nothing cleaning it on the way.
         This is exactly the case Bandit cannot distinguish on its own."""
         return self.is_tainted and not self.has_sanitizer
+
+
+# ---------------------------------------------------------------------------
+# Engine primitives
+#
+# The engine is built from small, independently testable primitives. Each one
+# does a single step of the backward walk described in docs/taint-engine.md.
+# ---------------------------------------------------------------------------
+
+import ast
+
+
+def _call_name(call: ast.Call) -> Optional[str]:
+    """The bare name of the function being called.
+
+    For an attribute call like g.db.execute(...) this returns "execute"; for a
+    plain call like execute(...) it returns "execute". Anything more exotic
+    returns None.
+    """
+    func = call.func
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    if isinstance(func, ast.Name):
+        return func.id
+    return None
+
+
+def variables_in_sink(code: str, sink_names: Set[str]) -> Set[str]:
+    """Primitive 1: the variables that feed the sink.
+
+    Given a snippet of code and the set of call names that count as sinks for
+    the active rule (for B608, names like "execute" and "executemany"), locate
+    the sink call and return the variable names that appear inside its
+    arguments. These are the starting points of the backward walk.
+
+    Only names inside the call's own arguments (positional and keyword) are
+    collected, so the object the method is called on (g, cursor, self) and any
+    assignment target on the left hand side are left out. If the snippet does
+    not parse, or contains no matching sink call, an empty set is returned.
+    """
+    try:
+        tree = ast.parse(code.strip())
+    except SyntaxError:
+        return set()
+
+    names: Set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and _call_name(node) in sink_names:
+            for arg in node.args:
+                for sub in ast.walk(arg):
+                    if isinstance(sub, ast.Name):
+                        names.add(sub.id)
+            for kw in node.keywords:
+                for sub in ast.walk(kw.value):
+                    if isinstance(sub, ast.Name):
+                        names.add(sub.id)
+    return names
