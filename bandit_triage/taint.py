@@ -515,3 +515,72 @@ def analyze(function_code: str,
         analysis_complete=not saw_unknown,
         tree=root,
     )
+
+
+# ---------------------------------------------------------------------------
+# Recovering the enclosing function
+#
+# The engine needs the whole function, but a Bandit finding carries only the
+# flagged line. Given the source file and the flagged line number, this reads
+# the file and returns the smallest function that encloses that line, which is
+# the principled intra-procedural boundary (not an arbitrary window of lines).
+# ---------------------------------------------------------------------------
+
+import os
+
+
+def enclosing_function(filename: str, line_number: int) -> Optional[str]:
+    """Return the source of the function that encloses the given line.
+
+    Reads filename, parses it, and finds the narrowest FunctionDef (or async
+    one) whose body spans line_number. Returns the function's source including
+    its decorators (so route decorators are visible), or None when the file is
+    unavailable, does not parse, or the line is not inside any function.
+
+    None is the signal for the caller to fall back to the regex: the engine only
+    runs when it can actually see the function.
+    """
+    try:
+        with open(filename, "r", encoding="utf-8") as fh:
+            source = fh.read()
+    except (OSError, UnicodeDecodeError):
+        return None
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+
+    best = None
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.lineno
+            # include decorator lines, which sit above node.lineno
+            if node.decorator_list:
+                start = min(d.lineno for d in node.decorator_list)
+            end = getattr(node, "end_lineno", node.lineno)
+            if start <= line_number <= end:
+                span = end - start
+                if best is None or span < best[0]:
+                    best = (span, start, end)
+
+    if best is None:
+        return None
+
+    _, start, end = best
+    lines = source.splitlines()
+    return "\n".join(lines[start - 1:end])
+
+
+def sink_line(filename: str, line_number: int) -> Optional[str]:
+    """Return the single source line at line_number (the flagged sink),
+    cleanly from the file rather than from Bandit's line-numbered code field.
+    """
+    try:
+        with open(filename, "r", encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return None
+    if 1 <= line_number <= len(lines):
+        return lines[line_number - 1]
+    return None

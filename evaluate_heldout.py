@@ -40,6 +40,8 @@ def load_labeled_report(path):
             test_name=it.get("test_name", ""),
             cwe_id=cwe_id,
             cwe_link=cwe_link,
+            function_code=it.get("function_code"),
+            sink_text=it.get("sink_text"),
         )
         label = it.get("label")
         if label not in ("true_positive", "false_positive"):

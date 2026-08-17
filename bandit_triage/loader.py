@@ -22,6 +22,11 @@ class Finding:
     cwe_id: Optional[int] = None
     cwe_link: Optional[str] = None
     label: Optional[str] = None  # only present in our labeled training data
+    # Optional pre-extracted context for the taint engine. When present, the
+    # engine reads these instead of opening the source file, so a dataset stays
+    # self-contained and reproducible without the scanned projects on disk.
+    function_code: Optional[str] = None  # the enclosing function's source
+    sink_text: Optional[str] = None      # the flagged line, clean (no line no.)
 
 
 def _extract_cwe(item: dict):
@@ -46,6 +51,8 @@ def _build_finding(item: dict, with_label: bool) -> Finding:
         cwe_id=cwe_id,
         cwe_link=cwe_link,
         label=item.get("label") if with_label else None,
+        function_code=item.get("function_code"),
+        sink_text=item.get("sink_text"),
     )
 
 

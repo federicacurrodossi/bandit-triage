@@ -9,16 +9,16 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 | Metric | Value |
 |--------|-------|
 | Findings | 57 (22 true, 35 false) |
-| Accuracy | 47/57 (82%) |
-| Precision (true_positive) | 0.80 |
-| Recall (true_positive) | 0.73 |
-| F1 score | 0.76 |
+| Accuracy | 48/57 (84%) |
+| Precision (true_positive) | 0.81 |
+| Recall (true_positive) | 0.77 |
+| F1 score | 0.79 |
 
 ## Confusion matrix (overall)
 
 | | predicted true | predicted false |
 |--|--|--|
-| **actual true** | 16 | 6 |
+| **actual true** | 17 | 5 |
 | **actual false** | 4 | 31 |
 
 ## Results by rule
@@ -74,7 +74,7 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 #### `target_django/django/test/runner.py:998`
 
 - **Hand label:** true_positive
-- **Model says:** likely_false_positive (p=0.06)
+- **Model says:** likely_false_positive (p=0.02)
 - **Top signal:** is_test_file (contribution = -3.28)
 
 ```python
@@ -134,8 +134,8 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 #### `target_django/tests/auth_tests/test_management.py:68`
 
 - **Hand label:** false_positive
-- **Model says:** likely_true_positive (p=0.72)
-- **Top signal:** has_tainted_input (contribution = +2.91)
+- **Model says:** likely_true_positive (p=0.79)
+- **Top signal:** has_tainted_input (contribution = +3.56)
 
 ```python
 63	                    if callable(inputs["password"]):
@@ -153,17 +153,17 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 
 ### B608
 
-- **Accuracy:** 21/25 (84%)
-- **Precision / Recall / F1:** 0.25 / 0.50 / 0.33
-- **Confusion:** TP 1, FP 3, TN 20, FN 1
+- **Accuracy:** 22/25 (88%)
+- **Precision / Recall / F1:** 0.40 / 1.00 / 0.57
+- **Confusion:** TP 2, FP 3, TN 20, FN 0
 
-**Misclassified (4):** the informative cases, worth reading to see where the model's signals fall short.
+**Misclassified (3):** the informative cases, worth reading to see where the model's signals fall short.
 
 #### `target_django/django/db/backends/base/operations.py:113`
 
 - **Hand label:** false_positive
-- **Model says:** likely_true_positive (p=0.53)
-- **Top signal:** confidence (contribution = +1.54)
+- **Model says:** likely_true_positive (p=0.72)
+- **Top signal:** confidence (contribution = +2.77)
 
 ```python
 108	
@@ -182,8 +182,8 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 #### `target_django/django/db/backends/oracle/operations.py:73`
 
 - **Hand label:** false_positive
-- **Model says:** likely_true_positive (p=0.53)
-- **Top signal:** confidence (contribution = +1.54)
+- **Model says:** likely_true_positive (p=0.72)
+- **Top signal:** confidence (contribution = +2.77)
 
 ```python
 68	    }
@@ -202,8 +202,8 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 #### `target_django/django/contrib/gis/db/backends/postgis/operations.py:212`
 
 - **Hand label:** false_positive
-- **Model says:** likely_true_positive (p=0.58)
-- **Top signal:** confidence (contribution = +1.54)
+- **Model says:** likely_true_positive (p=0.88)
+- **Top signal:** confidence (contribution = +2.77)
 
 ```python
 207	
@@ -217,25 +217,5 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 215	                    "Was the database created from a spatial database "
 216	                    "template?" % self.connection.settings_dict["NAME"]
 217	                )
-```
-
-#### `target_hackable/main.py:56`
-
-- **Hand label:** true_positive
-- **Model says:** likely_false_positive (p=0.28)
-- **Top signal:** rule_B101 (contribution = -0.85)
-
-```python
-51	
-52	@app.route('/api/v1.0/storeAPI/<item>', methods=['GET'])
-53	def searchAPI(item):
-54	    g.db = connect_db()
-55	    #curs = g.db.execute("SELECT * FROM shop_items WHERE name=?", item) #The safe way to actually get data from db
-56	    curs = g.db.execute("SELECT * FROM shop_items WHERE name = '%s'" %item)
-57	    results = [dict(name=row[0], quantity=row[1], price=row[2]) for row in curs.fetchall()]
-58	    g.db.close()
-59	    return jsonify(results)
-60	
-61	@app.errorhandler(404)
 ```
 

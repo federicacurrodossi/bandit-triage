@@ -527,7 +527,9 @@
       "line_number": 32,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/search\")\ndef search():\n    cur = conn.cursor()\n    term = request.args[\"q\"]                       # untrusted\n    query = \"SELECT * FROM products WHERE name = '%s'\" % term\n    cur.execute(query)\n    return str(cur.fetchall())",
+      "sink_text": "    query = \"SELECT * FROM products WHERE name = '%s'\" % term"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -538,7 +540,9 @@
       "line_number": 43,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/user\")\ndef user():\n    cur = conn.cursor()\n    user_id = request.args[\"id\"]                   # untrusted\n    query = \"SELECT * FROM users WHERE id = '\" + user_id + \"'\"\n    cur.execute(query)\n    return str(cur.fetchone())",
+      "sink_text": "    query = \"SELECT * FROM users WHERE id = '\" + user_id + \"'\""
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -549,7 +553,9 @@
       "line_number": 54,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/order\")\ndef order():\n    cur = conn.cursor()\n    order_id = request.args[\"order_id\"]            # untrusted\n    query = \"SELECT * FROM orders WHERE id = '{}'\".format(order_id)\n    cur.execute(query)\n    return str(cur.fetchone())",
+      "sink_text": "    query = \"SELECT * FROM orders WHERE id = '{}'\".format(order_id)"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -560,7 +566,9 @@
       "line_number": 65,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/login\", methods=[\"POST\"])\ndef login():\n    cur = conn.cursor()\n    username = request.form[\"username\"]            # untrusted\n    cur.execute(f\"SELECT * FROM users WHERE username = '{username}'\")\n    return str(cur.fetchone())",
+      "sink_text": "    cur.execute(f\"SELECT * FROM users WHERE username = '{username}'\")"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -571,7 +579,9 @@
       "line_number": 75,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/lookup\")\ndef lookup():\n    cur = conn.cursor()\n    email = request.args[\"email\"]                  # untrusted\n    query = \"SELECT * FROM users WHERE email = '[VALUE]'\".replace(\"[VALUE]\", email)\n    cur.execute(query)\n    return str(cur.fetchone())",
+      "sink_text": "    query = \"SELECT * FROM users WHERE email = '[VALUE]'\".replace(\"[VALUE]\", email)"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -582,7 +592,9 @@
       "line_number": 87,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/report\")\ndef report():\n    cur = conn.cursor()\n    table = request.args[\"table\"]                  # untrusted identifier\n    # parameterization can't protect a table name, so this is genuinely unsafe\n    cur.execute(f\"SELECT COUNT(*) FROM {table}\")\n    return str(cur.fetchone())",
+      "sink_text": "    cur.execute(f\"SELECT COUNT(*) FROM {table}\")"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -593,7 +605,9 @@
       "line_number": 95,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/sort\")\ndef sort_users():\n    cur = conn.cursor()\n    column = request.args[\"sort\"]                  # untrusted identifier\n    cur.execute(f\"SELECT * FROM users ORDER BY {column}\")\n    return str(cur.fetchall())",
+      "sink_text": "    cur.execute(f\"SELECT * FROM users ORDER BY {column}\")"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -604,7 +618,9 @@
       "line_number": 106,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/range\")\ndef range_query():\n    cur = conn.cursor()\n    low = request.args[\"low\"]                      # untrusted\n    high = request.args[\"high\"]                    # untrusted\n    query = \"SELECT * FROM events WHERE ts > '%s' AND ts < '%s'\" % (low, high)\n    cur.execute(query)\n    return str(cur.fetchall())",
+      "sink_text": "    query = \"SELECT * FROM events WHERE ts > '%s' AND ts < '%s'\" % (low, high)"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -615,7 +631,9 @@
       "line_number": 118,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/profile\")\ndef profile():\n    cur = conn.cursor()\n    raw = request.args[\"name\"]                     # untrusted\n    name = raw.strip()                             # still untrusted after strip()\n    query = \"SELECT * FROM profiles WHERE name = '\" + name + \"'\"\n    cur.execute(query)\n    return str(cur.fetchone())",
+      "sink_text": "    query = \"SELECT * FROM profiles WHERE name = '\" + name + \"'\""
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -626,7 +644,9 @@
       "line_number": 129,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/delete\", methods=[\"POST\"])\ndef delete_item():\n    cur = conn.cursor()\n    item = request.get_json()[\"item_id\"]           # untrusted\n    cur.execute(f\"DELETE FROM items WHERE id = {item}\")\n    conn.commit()\n    return \"deleted\"",
+      "sink_text": "    cur.execute(f\"DELETE FROM items WHERE id = {item}\")"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -637,7 +657,9 @@
       "line_number": 140,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/category\")\ndef category():\n    cur = conn.cursor()\n    cat = request.args[\"cat\"]                      # untrusted\n    sql = \"SELECT * FROM products WHERE category = '%s'\" % cat\n    cur.execute(sql)\n    return str(cur.fetchall())",
+      "sink_text": "    sql = \"SELECT * FROM products WHERE category = '%s'\" % cat"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -648,7 +670,9 @@
       "line_number": 151,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/tag/<tag_name>\")\ndef by_tag(tag_name):\n    cur = conn.cursor()\n    # tag_name comes from the URL path, still untrusted\n    query = \"SELECT * FROM posts WHERE tag = '{}'\".format(tag_name)\n    cur.execute(query)\n    return str(cur.fetchall())",
+      "sink_text": "    query = \"SELECT * FROM posts WHERE tag = '{}'\".format(tag_name)"
     },
     {
       "filename": "./constructed_examples/sql_injection_examples.py",
@@ -659,7 +683,9 @@
       "line_number": 162,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "true_positive"
+      "label": "true_positive",
+      "function_code": "@app.route(\"/session_lookup\")\ndef session_lookup():\n    cur = conn.cursor()\n    sid = request.cookies.get(\"session_id\")        # untrusted\n    cur.execute(f\"SELECT user_id FROM sessions WHERE sid = '{sid}'\")\n    return str(cur.fetchone())",
+      "sink_text": "    cur.execute(f\"SELECT user_id FROM sessions WHERE sid = '{sid}'\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -670,7 +696,9 @@
       "line_number": 94,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def all_from_table():\n    cursor = conn.cursor()\n    # built with an internal constant, never from request data\n    cursor.execute(f\"SELECT * FROM {TABLE_NAME} ORDER BY id\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(f\"SELECT * FROM {TABLE_NAME} ORDER BY id\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -681,7 +709,9 @@
       "line_number": 104,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def sorted_users(sort_key):\n    cursor = conn.cursor()\n    # sort_key is validated against an internal allow-list before use,\n    # so the f-string can only contain a known-safe column name\n    if sort_key not in ALLOWED_SORT:\n        sort_key = \"id\"\n    cursor.execute(f\"SELECT * FROM users ORDER BY {sort_key}\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(f\"SELECT * FROM users ORDER BY {sort_key}\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -692,7 +722,9 @@
       "line_number": 130,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def all_columns():\n    cursor = conn.cursor()\n    # column list built from an internal constant list\n    cols = \", \".join(COLUMNS)\n    cursor.execute(f\"SELECT {cols} FROM users\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(f\"SELECT {cols} FROM users\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -703,7 +735,9 @@
       "line_number": 137,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def qualified_query():\n    cursor = conn.cursor()\n    # schema name is a fixed internal constant\n    cursor.execute(f\"SELECT * FROM {SCHEMA}.users WHERE active = 1\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(f\"SELECT * FROM {SCHEMA}.users WHERE active = 1\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -714,7 +748,9 @@
       "line_number": 144,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def concat_internal():\n    cursor = conn.cursor()\n    # + concatenation, but only of internal constants\n    cursor.execute(\"SELECT * FROM \" + TABLE_NAME + \" WHERE deleted = 0\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(\"SELECT * FROM \" + TABLE_NAME + \" WHERE deleted = 0\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -725,7 +761,9 @@
       "line_number": 152,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def status_report(status):\n    cursor = conn.cursor()\n    # the table name comes from an internal mapping, not from status directly\n    table = STATUS_TABLES.get(status, \"open_tickets\")\n    cursor.execute(f\"SELECT COUNT(*) FROM {table}\")\n    return cursor.fetchone()[0]",
+      "sink_text": "    cursor.execute(f\"SELECT COUNT(*) FROM {table}\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -736,7 +774,9 @@
       "line_number": 160,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def top_n(limit):\n    cursor = conn.cursor()\n    # limit is coerced to int internally, so it can't carry injection\n    n = int(limit)\n    cursor.execute(f\"SELECT * FROM users ORDER BY id LIMIT {n}\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(f\"SELECT * FROM users ORDER BY id LIMIT {n}\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -747,7 +787,9 @@
       "line_number": 168,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def monthly_table(month_index):\n    cursor = conn.cursor()\n    # table name assembled from a fixed prefix and an internal integer\n    idx = int(month_index) % 12\n    cursor.execute(f\"SELECT * FROM stats_{idx}\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(f\"SELECT * FROM stats_{idx}\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -758,7 +800,9 @@
       "line_number": 175,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def join_fixed():\n    cursor = conn.cursor()\n    # both table names are internal constants\n    cursor.execute(f\"SELECT * FROM {TABLE_NAME} JOIN {SCHEMA}.roles USING (role_id)\")\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(f\"SELECT * FROM {TABLE_NAME} JOIN {SCHEMA}.roles USING (role_id)\")"
     },
     {
       "filename": "./constructed_examples/sql_safe_queries.py",
@@ -769,7 +813,9 @@
       "line_number": 182,
       "test_id": "B608",
       "test_name": "hardcoded_sql_expressions",
-      "label": "false_positive"
+      "label": "false_positive",
+      "function_code": "def format_internal():\n    cursor = conn.cursor()\n    # .format() with a fixed internal column list\n    cursor.execute(\"SELECT {} FROM users\".format(\", \".join(COLUMNS)))\n    return cursor.fetchall()",
+      "sink_text": "    cursor.execute(\"SELECT {} FROM users\".format(\", \".join(COLUMNS)))"
     }
   ]
 }

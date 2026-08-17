@@ -12,6 +12,53 @@ import re
 import numpy as np
 
 from .loader import Finding
+from .taint import (
+    analyze,
+    enclosing_function,
+    sink_line,
+    RuleConfig,
+)
+
+# Per-rule engine configuration. Only injection rules with a config get the
+# taint engine; today that is B608 (SQL). Adding B602/B703/... here later gives
+# them the same treatment without touching the feature code.
+_RULE_CONFIGS = {
+    "B608": RuleConfig(
+        rule_id="B608",
+        sink_names={"execute", "executemany", "executescript", "raw"},
+        sanitizers={"quote_name", "quote", "escape", "escape_string", "int"},
+    ),
+}
+
+
+def taint_signals(finding: Finding) -> tuple:
+    """Return (has_tainted_input, has_sanitizer) for a finding.
+
+    When the finding's rule has an engine config and the enclosing function can
+    be recovered from the source file, the values come from the taint engine,
+    which follows each value back to its origin. When the function is not
+    available (source file missing) or the rule has no config, it falls back to
+    the tainted-input regex and reports no sanitizer information.
+    """
+    config = _RULE_CONFIGS.get(finding.test_id)
+    if config is not None:
+        # Prefer context baked into the dataset; fall back to reading the file.
+        func = finding.function_code or enclosing_function(
+            finding.filename, finding.line_number)
+        if func is not None:
+            sink = (finding.sink_text
+                    or sink_line(finding.filename, finding.line_number)
+                    or finding.code)
+            result = analyze(func, sink, config)
+            # Trust the engine when it reached a definite conclusion: it either
+            # traced an untrusted source, or completed without hitting anything
+            # it could not follow.
+            if result.is_tainted or result.analysis_complete:
+                return (1.0 if result.is_tainted else 0.0,
+                        1.0 if result.has_sanitizer else 0.0)
+    # Fallback: the original regex, with no sanitizer information.
+    has_tainted = 1.0 if TAINTED_INPUT_RE.search(finding.code) else 0.0
+    return has_tainted, 0.0
 
 DUMMY_KEYWORDS = re.compile(
     r"(test|dummy|example|fake|changeme|demo|placeholder|sample|xxx|todo)",
@@ -46,6 +93,7 @@ FEATURE_NAMES = [
     "is_test_file",
     "has_dummy_keyword",
     "has_tainted_input",
+    "has_sanitizer",
     "has_dynamic_concat",
     "secret_score",
 ] + [f"rule_{tid}" for tid in KNOWN_TEST_IDS]
@@ -119,7 +167,7 @@ def extract_features(finding: Finding) -> np.ndarray:
     # "not a real secret".
     has_dummy = 1.0 if (DUMMY_KEYWORDS.search(finding.code)
                         or EMPTY_VALUE_RE.match(value.strip())) else 0.0
-    has_tainted = 1.0 if TAINTED_INPUT_RE.search(finding.code) else 0.0
+    has_tainted, has_sanitizer = taint_signals(finding)
     has_dynamic = 1.0 if DYNAMIC_CONCAT_RE.search(finding.code) else 0.0
 
     rule_flags = [1.0 if finding.test_id == tid else 0.0 for tid in KNOWN_TEST_IDS]
@@ -130,6 +178,7 @@ def extract_features(finding: Finding) -> np.ndarray:
         is_test_file,
         has_dummy,
         has_tainted,
+        has_sanitizer,
         has_dynamic,
         value_secret_score,
     ] + rule_flags
