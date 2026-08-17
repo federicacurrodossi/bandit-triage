@@ -39,3 +39,11 @@ true_positive main.py:56
 false_positive main.py:89
 false_positive main.py:90
 false_positive main.py:91
+
+# === keylogger (target_keylogger) : real SQL injection app ===
+# TRUE: device_id / data from request.args and request.json go straight into
+# the query (INSERT, UPDATE, SELECT); str() is not a sanitizer.
+# Source: https://github.com/Ankit404butfound/KeyLogger  app.py
+true_positive app.py:31
+true_positive app.py:40
+true_positive app.py:46

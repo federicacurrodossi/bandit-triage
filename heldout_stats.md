@@ -1,6 +1,6 @@
 # Held-out evaluation
 
-Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
+Sources (3 files): `heldout_b101.json`, `heldout_b608.json`, `heldout_keylogger_b608.json`
 
 > A real evaluation on findings the model was never trained on, hand-labeled with the same policy as the training data. Unlike the training-set accuracy in `dataset_stats.md`, this measures how well the model generalizes to unseen code from a different project.
 
@@ -8,17 +8,17 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 
 | Metric | Value |
 |--------|-------|
-| Findings | 57 (22 true, 35 false) |
-| Accuracy | 53/57 (93%) |
-| Precision (true_positive) | 0.85 |
-| Recall (true_positive) | 1.00 |
+| Findings | 63 (28 true, 35 false) |
+| Accuracy | 58/63 (92%) |
+| Precision (true_positive) | 0.87 |
+| Recall (true_positive) | 0.96 |
 | F1 score | 0.92 |
 
 ## Confusion matrix (overall)
 
 | | predicted true | predicted false |
 |--|--|--|
-| **actual true** | 22 | 0 |
+| **actual true** | 27 | 1 |
 | **actual false** | 4 | 31 |
 
 ## Results by rule
@@ -53,11 +53,11 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 
 ### B608
 
-- **Accuracy:** 22/25 (88%)
-- **Precision / Recall / F1:** 0.40 / 1.00 / 0.57
-- **Confusion:** TP 2, FP 3, TN 20, FN 0
+- **Accuracy:** 27/31 (87%)
+- **Precision / Recall / F1:** 0.70 / 0.88 / 0.78
+- **Confusion:** TP 7, FP 3, TN 20, FN 1
 
-**Misclassified (3):** the informative cases, worth reading to see where the model's signals fall short.
+**Misclassified (4):** the informative cases, worth reading to see where the model's signals fall short.
 
 #### `target_django/django/db/backends/base/operations.py:113`
 
@@ -66,17 +66,9 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 - **Top signal:** confidence (contribution = +2.77)
 
 ```python
-108	
-109	        This is used by the 'db' cache backend to determine where to start
-110	        culling.
-111	        """
-112	        cache_key = self.quote_name("cache_key")
-113	        return f"SELECT {cache_key} FROM %s ORDER BY {cache_key} LIMIT 1 OFFSET %%s"
-114	
-115	    def unification_cast_sql(self, output_field):
-116	        """
-117	        Given a field instance, return the SQL that casts the result of a union
-118	        to that type. The resulting string should contain a '%s' placeholder
+112         cache_key = self.quote_name("cache_key")
+113         return f"SELECT {cache_key} FROM %s ORDER BY {cache_key} LIMIT 1 OFFSET %%s"
+114
 ```
 
 #### `target_django/django/db/backends/oracle/operations.py:73`
@@ -86,17 +78,11 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 - **Top signal:** confidence (contribution = +2.77)
 
 ```python
-68	    }
-69	
-70	    def cache_key_culling_sql(self):
-71	        cache_key = self.quote_name("cache_key")
-72	        return (
-73	            f"SELECT {cache_key} "
-74	            f"FROM %s "
-75	            f"ORDER BY {cache_key} OFFSET %%s ROWS FETCH FIRST 1 ROWS ONLY"
-76	        )
-77	
-78	    # EXTRACT format cannot be passed in parameters.
+72         return (
+73             f"SELECT {cache_key} "
+74             f"FROM %s "
+75             f"ORDER BY {cache_key} OFFSET %%s ROWS FETCH FIRST 1 ROWS ONLY"
+76         )
 ```
 
 #### `target_django/django/contrib/gis/db/backends/postgis/operations.py:212`
@@ -106,16 +92,24 @@ Sources (2 files): `heldout_b101.json`, `heldout_b608.json`
 - **Top signal:** confidence (contribution = +2.77)
 
 ```python
-207	
-208	            try:
-209	                vtup = self.postgis_version_tuple()
-210	            except ProgrammingError:
-211	                raise ImproperlyConfigured(
-212	                    'Cannot determine PostGIS version for database "%s" '
-213	                    'using command "SELECT postgis_lib_version()". '
-214	                    "GeoDjango requires at least PostGIS version 3.2. "
-215	                    "Was the database created from a spatial database "
-216	                    "template?" % self.connection.settings_dict["NAME"]
-217	                )
+211                 raise ImproperlyConfigured(
+212                     'Cannot determine PostGIS version for database "%s" '
+213                     'using command "SELECT postgis_lib_version()". '
+214                     "GeoDjango requires at least PostGIS version 3.2. "
+215                     "Was the database created from a spatial database "
+216                     "template?" % self.connection.settings_dict["NAME"]
+217                 )
+```
+
+#### `target_hackable/main.py:25`
+
+- **Hand label:** true_positive
+- **Model says:** likely_false_positive (p=0.43)
+- **Top signal:** rule_B101 (contribution = -0.98)
+
+```python
+24         g.db = connect_db()
+25         cur = g.db.execute("SELECT * FROM employees WHERE username = '%s' AND password = '%s'" %(uname, hash_pass(pword)))
+26         if cur.fetchone():
 ```
 

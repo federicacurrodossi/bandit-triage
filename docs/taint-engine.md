@@ -122,17 +122,25 @@ recognize its absence). The end-to-end check wires the engine's verdict into the
 classifier features and reruns `evaluate_heldout.py` against the recorded
 baseline in `heldout_stats.md`.
 
-Measured effect on the held-out set. B608 recall went from 0.50 to 1.00: the
-route-parameter injection (`main.py:56`), the case a surface regex could not
-see, is now caught, and B608 has no false negatives left.
+Measured effect on the held-out set. The B608 set was later strengthened with
+real true positives collected from a vulnerable Flask app (a keylogger backend
+whose endpoints paste `request` data straight into INSERT, UPDATE, and SELECT
+queries), bringing it from 2 to 8 true positives so the metrics rest on more
+than a couple of cases. The engine recognizes every one of them as exploitable
+(untrusted `request` data reaching the sink with no sanitizer). B608 now scores
+recall 0.88 and F1 0.78, and the whole held-out set reaches 58/63 (92%), F1 0.92.
 
 Three static-template false positives remain (`operations.py:113` and the like),
 but the reason is no longer data flow: the engine correctly stops treating them
 as tainted (the `has_tainted_input` signal is off for them), and the model now
 errs on Bandit's high `confidence` instead. These sinks are also a shape the
 engine does not yet cover, a `return f"..."` rather than an `execute(...)` call,
-so it cannot assert they are safe either. They are outside the dataflow gap the
-engine set out to close, and are noted honestly rather than counted as engine
+so it cannot assert they are safe either. One further miss (`main.py:25`) is a
+login query where the engine correctly finds the taint but marks the analysis
+incomplete (a password argument passes through a hashing call it does not
+follow), and the model lands just below the threshold. They are outside the
+dataflow gap the engine set out to close, and are noted honestly rather than
+counted as engine
 failures.
 
 As a final external check, Joern is run once over the held-out cases as a

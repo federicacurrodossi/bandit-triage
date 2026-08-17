@@ -132,13 +132,13 @@ checking that the model generalizes past its exact examples.
   rules fall back to generic context signals, so give those more scrutiny.
   Adding a rule means adding labeled examples, not just listing the ID.
 * The held-out evaluation (see [`docs/evaluation.md`](docs/evaluation.md))
-  makes these concrete. On unseen findings from Django and a vulnerable Flask
-  app the model reaches 93% accuracy (F1 0.92). The errors are informative and,
-  because the model is explainable, each one names the feature responsible,
-  which points directly at what to improve. Two such leads have already been
-  followed: the data-flow work below, and a content-based `is_test_file` that
-  reads a file for a `TestCase` class rather than trusting the word "test" in
-  its path, which took B101 recall from 0.75 to 1.00.
+  makes these concrete. On 63 unseen findings from Django and two vulnerable
+  Flask apps the model reaches 92% accuracy (F1 0.92). The errors are
+  informative and, because the model is explainable, each one names the feature
+  responsible, which points directly at what to improve. Two such leads have
+  already been followed: the data-flow work below, and a content-based
+  `is_test_file` that reads a file for a `TestCase` class rather than trusting
+  the word "test" in its path, which took B101 recall from 0.75 to 1.00.
 * The data-flow work targets exactly these errors. Rather than widening the
   snippet by a fixed amount (an arbitrary, fragile heuristic), the project adds
   a small intra-procedural taint analysis (`bandit_triage/taint.py`, described
@@ -147,12 +147,14 @@ checking that the model generalizes past its exact examples.
   function no matter how far apart they are. This is the boundary Semgrep's free
   tier also draws; inter-procedural flow across functions and files is left to
   heavier tools like CodeQL and reported honestly as unknown.
-* Wired into the features, the engine lifts B608 recall from 0.50 to 1.00: it
-  catches the real SQL injection where the untrusted value arrives through a
-  Flask route parameter, which the old regex feature could not see. The static
-  template false positives that remain are no longer a data-flow problem (the
-  engine correctly stops calling them tainted); they turn on Bandit's confidence
-  and on a sink shape (`return f"..."`) the engine does not yet cover.
+* Wired into the features, the engine catches the real SQL injections the old
+  regex missed: the Flask route parameter case, and eight true positives
+  collected from vulnerable apps (a keylogger backend that pastes `request` data
+  into INSERT, UPDATE, and SELECT queries), lifting the B608 held-out from 2 to
+  8 true positives and its F1 to 0.78. The static template false positives that
+  remain are no longer a data-flow problem (the engine correctly stops calling
+  them tainted); they turn on Bandit's confidence and on a sink shape
+  (`return f"..."`) the engine does not yet cover.
 
 ## Docs
 

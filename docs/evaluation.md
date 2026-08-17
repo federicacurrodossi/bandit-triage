@@ -102,10 +102,12 @@ A note on why several sources are needed. A clean framework like Django gives
 plenty of *false* positives for a rule (its ORM builds SQL from internal
 identifiers, which Bandit flags but which are safe), but no *true* positives,
 because a mature project has no real SQL injection. The true positives come
-from deliberately vulnerable teaching apps (for B608, a small Flask app whose
-login and search endpoints paste `request` data straight into the query). One
-rule's held-out set therefore mixes both: safe-but-flagged queries from real
-code, and genuine injections from vulnerable apps.
+from deliberately vulnerable apps (for B608, two small Flask apps whose login,
+search, and logging endpoints paste `request` data straight into the query).
+Each true positive is traceable to the real file it came from, so the set is
+auditable rather than synthetic. One rule's held-out set therefore mixes both:
+safe-but-flagged queries from real code, and genuine injections from vulnerable
+apps.
 
 ### 5. Evaluate the whole folder at once
 
@@ -153,8 +155,8 @@ one precise, understandable limitation. The fix followed the lead. `is_test_file
 now reads the file for a `TestCase` class (content), or accepts a `tests/`
 directory or `test_*.py` name (path), which tells `django/test/` (production)
 apart from `tests/` (real tests and their support code). B101 recall rose from
-0.75 to 1.00 and its accuracy to 31/32 (97%), lifting the whole held-out set to
-53/57 (93%), F1 0.92. This is the kind of concrete, fixable insight an
+0.75 to 1.00 and its accuracy to 31/32 (97%), and the whole held-out set now
+sits at 58/63 (92%), F1 0.92. This is the kind of concrete, fixable insight an
 explainable model gives that a black-box classifier would not.
 
 ## Extending the evaluation

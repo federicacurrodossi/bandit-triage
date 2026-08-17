@@ -34,15 +34,21 @@ constructed_examples/
 # Held-out evaluation: cloned projects and raw/split scans (all regenerated)
 target_django/
 target_hackable/
+target_keylogger/
+target_pyload/
+keylogger_findings.json
+pyload_findings.json
+django_b105_check.json
+heldout_composition.py
 django_findings.json
 django_findings/
 hackable_findings.json
 
 # Editor/local
 .claude/
-
+docs/rule-coverage.md
 # NOTE: intentionally NOT ignored (committed on purpose):
 #   data/labeled_findings.json   -> training dataset
 #   heldout/heldout_*.json       -> hand-labeled held-out test sets
 #   b608_spec.txt                -> spec that rebuilds the B608 held-out
-#   dataset_stats.md, misclassified.md, heldout_stats.md -> living reports
+#   dataset_stats.md, misclassified.md, heldout_stats.md -> living reportsheldout_composition.py
