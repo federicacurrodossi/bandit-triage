@@ -124,8 +124,7 @@ baseline in `heldout_stats.md`.
 
 Measured effect on the held-out set. B608 recall went from 0.50 to 1.00: the
 route-parameter injection (`main.py:56`), the case a surface regex could not
-see, is now caught, and B608 has no false negatives left. Overall accuracy moved
-from 47/57 to 48/57 and F1 from 0.76 to 0.79.
+see, is now caught, and B608 has no false negatives left.
 
 Three static-template false positives remain (`operations.py:113` and the like),
 but the reason is no longer data flow: the engine correctly stops treating them

@@ -116,7 +116,10 @@ the code do with it.
   all) they're effectively constant, which is exactly why the rest matter.
 * **`is_test_file`** answers "where is it". A finding in a test file is almost
   always noise. This dominates B101, where an `assert` in a test is fine and
-  the same `assert` in production code isn't.
+  the same `assert` in production code isn't. It reads a file for a `TestCase`
+  class (content) or accepts a `tests/` directory or `test_*.py` name (path),
+  which tells real tests and their support code apart from production packages
+  like Django's `django/test/` that merely have "test" in the path.
 * **`has_dummy_keyword`** answers "what is the value". Words like `changeme`,
   `test`, or `fake` suggest a placeholder. It also fires on empty or null
   values (`None`, `null`, `""`), since a config default like `SECRET_KEY: None`
@@ -125,16 +128,17 @@ the code do with it.
 * **`has_tainted_input`** answers "does outside data reach this", and it's the
   strongest danger signal in the set. `shell=True` fed by user input is
   exploitable and `pickle.loads` on attacker controlled bytes is remote code
-  execution, while the same calls on fixed internal data are not. It covers web,
-  CLI, and environment input (`request.`, `input(`, `sys.argv`, form and query
-  params) plus cache stores (`redis`, `memcache`), raw sockets (`socket.`,
-  `.recv(`), and message queues (`kafka`, `pika.`, `.consume(`). The patterns
-  stay narrow to avoid matching ordinary internal calls. Today this is a regex
-  over the flagged snippet, which is its main weakness: it only sees taint
-  inside the few lines Bandit reports. `bandit_triage/taint.py` is the planned
-  replacement, a small intra-procedural taint analysis that works backward from
-  the sink through the function to find where each value actually comes from,
-  so the signal no longer depends on how close the assignment happens to sit.
+  execution, while the same calls on fixed internal data are not. For B608 this
+  now comes from the taint engine (`bandit_triage/taint.py`), which works
+  backward from the sink through the function to find where each value actually
+  comes from, so the signal no longer depends on how close the assignment sits.
+  Other rules fall back to a regex over the flagged snippet covering web, CLI,
+  and environment input (`request.`, `input(`, `sys.argv`), cache stores, raw
+  sockets, and message queues.
+* **`has_sanitizer`** answers "was it cleaned on the way". The engine sets this
+  when a sanitizer (parameterization, escaping, quoting) sits between an
+  untrusted source and the sink, which is what separates a real injection from
+  input that was made safe before reaching the query.
 * **`has_dynamic_concat`** flags a string built at runtime, an injection risk,
   versus a fixed literal.
 * **`secret_score`** is a gradual score from 0 to 1 for how much a flagged

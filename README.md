@@ -133,9 +133,12 @@ checking that the model generalizes past its exact examples.
   Adding a rule means adding labeled examples, not just listing the ID.
 * The held-out evaluation (see [`docs/evaluation.md`](docs/evaluation.md))
   makes these concrete. On unseen findings from Django and a vulnerable Flask
-  app the model reaches around 84% accuracy. The errors are informative and,
+  app the model reaches 93% accuracy (F1 0.92). The errors are informative and,
   because the model is explainable, each one names the feature responsible,
-  which points directly at what to improve.
+  which points directly at what to improve. Two such leads have already been
+  followed: the data-flow work below, and a content-based `is_test_file` that
+  reads a file for a `TestCase` class rather than trusting the word "test" in
+  its path, which took B101 recall from 0.75 to 1.00.
 * The data-flow work targets exactly these errors. Rather than widening the
   snippet by a fixed amount (an arbitrary, fragile heuristic), the project adds
   a small intra-procedural taint analysis (`bandit_triage/taint.py`, described

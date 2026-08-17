@@ -136,30 +136,26 @@ Because the model is explainable, a misclassified finding is not a dead end:
 the report shows which feature pushed the model toward its wrong answer, so
 each error points at a concrete, fixable cause rather than being random noise.
 
-## First result: B101 on Django
+## Worked example: B101 on Django
 
 The first held-out evaluation used 32 hand-labeled B101 findings from Django
 (20 true positives from production code, 12 false positives from real test
-files). The model scored:
+files). At first the model scored 27/32 (84%), and every one of the five errors
+was the same kind of case, which the report named directly: findings under
+`django/test/`, Django's testing *framework* (production code that happens to
+live in a folder called `test`), not actual tests. The `is_test_file` feature
+only checked whether "test" appeared in the path, so it fired on these and
+pushed the model to "false positive". The reviewer labeled them true positive,
+because they are production asserts that vanish under `python -O` like any other.
 
-* **Accuracy: 27/32 (84%)**
-* **Precision: 1.00**, so every time it said "true positive" it was right
-* **Recall: 0.75**
-
-All five errors were the same kind of case, and the report named the cause
-directly: findings under `django/test/`, which is Django's testing *framework*
-(production code that happens to live in a folder called `test`), not actual
-tests. The `is_test_file` feature only checks whether "test" appears in the
-path, so it fired on these and pushed the model to "false positive" (top
-signal `is_test_file`, a strongly negative contribution). The reviewer labeled
-them true positive, because they are production asserts that vanish under
-`python -O` like any other.
-
-This is the held-out set doing its job. The errors are not random: they expose
-one precise, understandable limitation, that `is_test_file` cannot tell
-`django/test/` (a production module) from `tests/` (real tests). That is a
-real lead for improvement, and the kind of insight an explainable model gives
-that a black-box classifier would not.
+This is the held-out set doing its job: the errors were not random, they exposed
+one precise, understandable limitation. The fix followed the lead. `is_test_file`
+now reads the file for a `TestCase` class (content), or accepts a `tests/`
+directory or `test_*.py` name (path), which tells `django/test/` (production)
+apart from `tests/` (real tests and their support code). B101 recall rose from
+0.75 to 1.00 and its accuracy to 31/32 (97%), lifting the whole held-out set to
+53/57 (93%), F1 0.92. This is the kind of concrete, fixable insight an
+explainable model gives that a black-box classifier would not.
 
 ## Extending the evaluation
 
