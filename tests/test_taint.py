@@ -4,7 +4,14 @@ Each primitive is checked on small functions taken from the held-out cases, so
 the tests exercise the same code the end-to-end evaluation runs on. See
 docs/taint-engine.md for what each primitive is meant to do.
 """
-from bandit_triage.taint import variables_in_sink, last_assignment_of
+from bandit_triage.taint import (
+    variables_in_sink,
+    last_assignment_of,
+    classify_origin,
+    is_route_param,
+    RuleConfig,
+    SourceType,
+)
 
 
 # Call names that count as SQL sinks for B608.
@@ -102,3 +109,80 @@ def f():
 
     def test_syntax_error_is_safe(self):
         assert last_assignment_of("def broken(", "x") is None
+
+
+class TestClassifyOrigin:
+    """Primitive 3: judge where a value comes from."""
+
+    def test_request_is_untrusted(self):
+        for code in ["request.args['q']", "request.form['user']",
+                     "request.cookies.get('x')"]:
+            info = classify_origin(code)
+            assert info.source_type == SourceType.REQUEST
+            assert info.source_type.is_untrusted
+
+    def test_program_input_is_untrusted(self):
+        for code in ["input()", "sys.argv[1]", "os.environ['HOME']",
+                     "os.getenv('PATH')"]:
+            info = classify_origin(code)
+            assert info.source_type == SourceType.INPUT
+            assert info.source_type.is_untrusted
+
+    def test_literal_is_constant(self):
+        assert classify_origin("'SELECT * FROM users'").source_type == SourceType.CONSTANT
+        assert classify_origin("42").source_type == SourceType.CONSTANT
+
+    def test_unknown_call(self):
+        info = classify_origin("self.some_helper(x)")
+        assert info.source_type == SourceType.UNKNOWN
+        assert not info.is_sanitizer
+
+    def test_none_is_unknown(self):
+        assert classify_origin(None).source_type == SourceType.UNKNOWN
+
+    def test_sanitizer_recorded(self):
+        cfg = RuleConfig(rule_id="B608", sanitizers={"quote_name", "escape"})
+        info = classify_origin("self.quote_name('cache_key')", cfg)
+        assert info.sanitizer_name == "quote_name"
+        assert info.is_sanitizer
+
+    def test_non_sanitizer_call_with_config(self):
+        cfg = RuleConfig(rule_id="B608", sanitizers={"quote_name"})
+        info = classify_origin("some_other(x)", cfg)
+        assert info.sanitizer_name is None
+
+
+class TestIsRouteParam:
+    """Primitive 3, route case: a view parameter bound from the URL."""
+
+    def test_flask_route_param(self):
+        # main.py:56, the real injection: item comes from the route.
+        code = '''
+@app.route('/api/v1.0/storeAPI/<item>', methods=['GET'])
+def searchAPI(item):
+    curs = g.db.execute("SELECT ... '%s'" % item)
+'''
+        assert is_route_param(code, "item") is True
+
+    def test_typed_converter(self):
+        code = '''
+@app.route('/x/<int:item>')
+def f(item):
+    return item
+'''
+        assert is_route_param(code, "item") is True
+
+    def test_param_without_route_is_not(self):
+        code = '''
+def helper(item):
+    return item + 1
+'''
+        assert is_route_param(code, "item") is False
+
+    def test_name_not_a_param(self):
+        code = '''
+@app.route('/x/<item>')
+def f(item):
+    return item
+'''
+        assert is_route_param(code, "other") is False

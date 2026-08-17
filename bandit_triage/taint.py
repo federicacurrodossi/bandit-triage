@@ -219,3 +219,134 @@ def last_assignment_of(function_code: str, var_name: str) -> Optional[str]:
     if last is None:
         return None
     return ast.unparse(last.value)
+
+
+# Names whose attribute access carries attacker-controllable web input.
+UNTRUSTED_REQUEST_ROOTS = {"request"}
+
+# Callables that read input from outside the program.
+INPUT_CALLS = {"input", "getpass"}
+# Attribute accesses that read input from the environment or arguments.
+INPUT_ATTRS = {"argv", "environ", "getenv", "stdin"}
+
+
+@dataclass
+class OriginInfo:
+    """What primitive 3 concluded about one origin: its source type, and, when
+    the origin is a sanitizer call, the name of that sanitizer so the walk can
+    look through it at what it wraps."""
+    source_type: SourceType = SourceType.UNKNOWN
+    sanitizer_name: Optional[str] = None
+
+    @property
+    def is_sanitizer(self) -> bool:
+        return self.sanitizer_name is not None
+
+
+def _root_name(node: ast.AST) -> Optional[str]:
+    """The leftmost name of an attribute chain: for request.args.get returns
+    'request', for os.environ returns 'os'."""
+    while isinstance(node, (ast.Attribute, ast.Subscript, ast.Call)):
+        if isinstance(node, ast.Attribute):
+            node = node.value
+        elif isinstance(node, ast.Subscript):
+            node = node.value
+        else:  # ast.Call
+            node = node.func
+    return node.id if isinstance(node, ast.Name) else None
+
+
+def classify_origin(rhs_code: Optional[str],
+                    config: Optional["RuleConfig"] = None) -> OriginInfo:
+    """Primitive 3: judge where a value comes from.
+
+    Given the right hand side of an assignment (as returned by primitive 2),
+    decide which SourceType it represents. When a RuleConfig is supplied and the
+    value is produced by one of its sanitizer calls, the sanitizer name is
+    recorded so the walk can look through it.
+
+    Recognized cases:
+      * request.* (Flask/Django web input)        -> REQUEST (untrusted)
+      * input(), sys.argv, os.environ, os.getenv  -> INPUT   (untrusted)
+      * a literal string or number                -> CONSTANT (safe)
+      * a call listed as a sanitizer for the rule -> sanitizer recorded
+      * anything else (a call we do not follow)   -> UNKNOWN
+
+    Route parameters are handled separately by is_route_param, since deciding
+    that needs the whole function, not just this expression.
+    """
+    if rhs_code is None:
+        return OriginInfo(SourceType.UNKNOWN)
+    try:
+        tree = ast.parse(rhs_code, mode="eval")
+    except SyntaxError:
+        return OriginInfo(SourceType.UNKNOWN)
+
+    body = tree.body
+
+    # A bare literal: safe.
+    if isinstance(body, ast.Constant):
+        return OriginInfo(SourceType.CONSTANT)
+
+    # Web input: any reference rooted at 'request'.
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and node.id in UNTRUSTED_REQUEST_ROOTS:
+            return OriginInfo(SourceType.REQUEST)
+
+    # Program input: input()/getpass(), or sys.argv / os.environ / os.getenv.
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            name = node.func.id if isinstance(node.func, ast.Name) else None
+            if name in INPUT_CALLS:
+                return OriginInfo(SourceType.INPUT)
+        if isinstance(node, ast.Attribute) and node.attr in INPUT_ATTRS:
+            return OriginInfo(SourceType.INPUT)
+
+    # A sanitizer call for this rule: record its name so the walk sees through it.
+    if config is not None and isinstance(body, ast.Call):
+        call_name = _call_name(body)
+        if call_name is not None and config.is_sanitizer(call_name):
+            return OriginInfo(SourceType.UNKNOWN, sanitizer_name=call_name)
+
+    # A call or name we do not follow within the function: honestly unknown.
+    return OriginInfo(SourceType.UNKNOWN)
+
+
+def is_route_param(function_code: str, var_name: str) -> bool:
+    """Primitive 3, route case: is var_name a view parameter bound from the URL?
+
+    True when the variable is a parameter of the function and the function
+    carries a Flask/Django route decorator whose pattern contains <var_name>
+    (Flask style, including typed converters like <int:item>) . This is the
+    origin of the real injection in main.py:56, which no assignment search can
+    find because the value never gets assigned: it arrives through the route.
+    """
+    try:
+        tree = ast.parse(function_code.strip())
+    except SyntaxError:
+        return False
+
+    func = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            func = node
+            break
+    if func is None:
+        return False
+
+    # Is var_name one of the function's parameters?
+    params = {a.arg for a in func.args.args}
+    if var_name not in params:
+        return False
+
+    # Does any route decorator mention <var_name> (optionally <conv:var_name>)?
+    for dec in func.decorator_list:
+        for s in ast.walk(dec):
+            if isinstance(s, ast.Constant) and isinstance(s.value, str):
+                pattern = s.value
+                if f"<{var_name}>" in pattern:
+                    return True
+                # typed converter form, e.g. <int:item> or <path:item>
+                if f":{var_name}>" in pattern:
+                    return True
+    return False
