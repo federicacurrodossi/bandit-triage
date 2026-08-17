@@ -7,6 +7,7 @@ manually triaging a Bandit finding (is this in a test file? does the value
 look like a real secret or a placeholder? does tainted input reach this
 call?), not an opaque learned representation.
 """
+import ast
 import re
 
 import numpy as np
@@ -154,11 +155,79 @@ def secret_score(value: str) -> float:
     return (length_score + variety_score) / 2.0
 
 
+def _has_test_content(source: str) -> bool:
+    """True when a file's content shows it actually contains tests: a class that
+    inherits from a *TestCase base (unittest.TestCase, Django's SimpleTestCase,
+    TransactionTestCase, and so on).
+
+    This is the reliable signal in practice. A bare def test_* is not enough on
+    its own: production framework code contains functions and methods that begin
+    with test_ without being tests (Django's own test/runner.py has a
+    test_match_tags helper and a RemoteTestResult.test_index method, neither a
+    test). Requiring a TestCase base class separates a real test file, where an
+    assert is routine so a Bandit B101 is usually a false positive, from
+    production code that merely lives under a path containing "test", such as
+    Django's django/test/ package, which provides testing tools but is not a
+    test file itself.
+
+    The trade-off is explicit: a project written purely in pytest style (module
+    level def test_* with no TestCase class) would not be recognized by content.
+    The path based fallback below still catches those by their test_*.py or
+    tests/ naming, and the datasets this was measured on contain no such case.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            for base in node.bases:
+                name = base.attr if isinstance(base, ast.Attribute) else (
+                    base.id if isinstance(base, ast.Name) else "")
+                if name.endswith("TestCase"):
+                    return True
+    return False
+
+
+# Path-based test conventions, used together with content: a tests/ directory
+# (plural only, so Django's singular django/test/ production package does not
+# match), or a test_*.py / *_test.py / tests.py / conftest.py filename.
+_TEST_PATH_RE = re.compile(
+    r"(^|/)tests/|(^|/)(test_[^/]*|[^/]*_test|tests|conftest)\.py$",
+    re.IGNORECASE,
+)
+
+
+def is_test_file(finding: Finding) -> float:
+    """Whether the finding sits in a test file or test support code.
+
+    Two signals are combined, because "test file" has two faces. Content: a file
+    that defines a *TestCase class is a test file wherever it lives. Path: a file
+    under a tests/ directory (plural) or named test_*.py / *_test.py is part of a
+    test suite even when it holds no TestCase itself (models.py, urls.py and
+    tasks.py under tests/ are support code the tests import, where an assert is
+    still test code and a Bandit B101 is still a false positive).
+
+    A file counts as a test file if either signal fires. The path signal is
+    deliberately the plural tests/ (or a test_* filename), not the singular
+    test/, so Django's django/test/ production package, which contains no
+    TestCase classes and is not under a tests/ directory, is correctly left out.
+    """
+    by_path = 1.0 if _TEST_PATH_RE.search(finding.filename) else 0.0
+    by_content = 0.0
+    try:
+        with open(finding.filename, "r", encoding="utf-8") as fh:
+            by_content = 1.0 if _has_test_content(fh.read()) else 0.0
+    except (OSError, UnicodeDecodeError):
+        by_content = 0.0
+    return 1.0 if (by_path or by_content) else 0.0
+
+
 def extract_features(finding: Finding) -> np.ndarray:
     confidence = _LEVEL_MAP.get(finding.issue_confidence.upper(), 0.5)
     severity = _LEVEL_MAP.get(finding.issue_severity.upper(), 0.5)
 
-    is_test_file = 1.0 if re.search(r"test", finding.filename, re.IGNORECASE) else 0.0
+    test_file = is_test_file(finding)
     value = extract_flagged_value(finding)
     value_secret_score = secret_score(value)
 
@@ -175,7 +244,7 @@ def extract_features(finding: Finding) -> np.ndarray:
     vector = [
         confidence,
         severity,
-        is_test_file,
+        test_file,
         has_dummy,
         has_tainted,
         has_sanitizer,
